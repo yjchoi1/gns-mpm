@@ -1,19 +1,26 @@
 #!/bin/bash
 
-# make venv and activate it
-virtualenv ~/python_envs/venv-gns-cpu
-source ~/python_envs/venv-gns-cpu/bin/activate
+module reset 
 
-# install requirements
-which pip3
-pip install torch==1.11.0+cpu torchvision==0.12.0+cpu torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cpu
-python -c "import torch; print(torch.__version__)"
-export TORCH="1.11"
-export TORCH="cpu"
-pip install torch-scatter -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html
-pip install torch-sparse -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html
-pip install torch-geometric
-pip3 install -r requirements.txt
+# create env
+# ---------
+ml cuda/11.3
+ml cudnn
+ml nccl
+
+module load phdf5
+module load python3/3.9
+export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
+
+python3 -m virtualenv venv
+source venv/bin/activate
+
+which python
+python -m pip install --upgrade pip
+python -m pip install torch==1.11.0+cu113 --extra-index-url https://download.pytorch.org/whl/cu113
+python -m pip install torch-spline-conv -f https://data.pyg.org/whl/torch-1.11.0+cu113.html --no-binary torch-spline-conv
+python -m pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.11.0+cu113.html
+python -m pip install -r requirements.txt
 
 # test env
 # --------
@@ -34,4 +41,3 @@ python test/test_torch_geometric.py
 # --------
 #deactivate
 #rm -r venv
-

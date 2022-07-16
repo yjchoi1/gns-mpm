@@ -1,6 +1,3 @@
-# # venv
-source ~/Documents/gns-2/rollout-2d.sh
-
 # # Note
 #/scratch/04709/vantaj94/gns_pytorch/Sand
 # /work/08264/baagee/ls6/gns-data-2d-column
