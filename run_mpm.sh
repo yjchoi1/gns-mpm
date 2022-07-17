@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH -J mpm
-#SBATCH -o mpm.o%j
-#SBATCH -e mpm.e%j
+#SBATCH -J mpm-4
+#SBATCH -o mpm-4.o%j
+#SBATCH -e mpm-4.e%j
 #SBATCH -n 1
 #SBATCH -N 1
 #SBATCH -p small
-#SBATCH -t 05:00:00
-export MPM_DIR="./mpm/mpm-train1/"
+#SBATCH -t 07:00:00
+export MPM_DIR="./mpm/mpm-4/"
 echo "${MPM_DIR}"
 
-~/Documents/mpm/build/mpm -i /mpm.json -f "${MPM_DIR}"
+/work/08264/baagee/frontera/mpm/build/mpm -i /mpm.json -f "${MPM_DIR}"
 
