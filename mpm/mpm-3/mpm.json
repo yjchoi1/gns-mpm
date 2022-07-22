@@ -1,0 +1,110 @@
+{
+  "title": "2d Sand column",
+  "mesh": {
+    "mesh": "mesh.txt",
+    "entity_sets": "entity_sets.json",
+    "cell_type": "ED2Q4",
+    "isoparametric": false,
+    "io_type": "Ascii2D",
+    "node_type": "N2D",
+    "boundary_conditions": {
+      "velocity_constraints": [
+        {
+          "nset_id": 0,
+          "dir": 0,
+          "velocity": 0.00
+        },
+        {
+          "nset_id": 1,
+          "dir": 1,
+          "velocity": 0.0
+        }
+      ],
+      "friction_constraints": [
+        {
+          "nset_id" : 1,
+          "dir": 1,
+          "sign_n": -1,
+          "friction": 0.4
+        },
+        {
+          "nset_id" : 1,
+          "dir": 1,
+          "sign_n": -1,
+          "friction": 0.4
+        }
+      ]
+    }
+  },
+  "particles": [
+    {
+      "generator": {
+        "check_duplicates": true,
+        "location": "particles.txt",
+        "io_type": "Ascii2D",
+        "pset_id": 0,
+        "particle_type": "P2D",
+        "material_id": 2,
+        "type": "file"
+      }
+    }
+  ],
+  "materials": [
+    {
+      "id": 0,
+      "type": "Newtonian2D",
+      "density": 1800,
+      "bulk_modulus": 1.0E+06,
+      "dynamic_viscosity": 0
+    },
+    {
+      "id": 1,
+      "type": "LinearElastic2D",
+      "density": 1800,
+      "youngs_modulus": 1.0E+06,
+      "poisson_ratio": 0
+    },
+    {
+      "id" : 2,
+      "type" : "MohrCoulomb2D",
+      "density" : 1600,
+      "youngs_modulus" : 2E+6,
+      "poisson_ratio" : 0.3,
+      "friction" : 40,
+      "dilation" : 0,
+      "cohesion" : 10,
+      "residual_friction" : 40,
+      "residual_dilation" : 0,
+      "residual_cohesion" : 0,
+      "peak_pdstrain" : 0,
+      "residual_pdstrain" : 0,
+      "tension_cutoff" : 5,
+      "softening" : false,
+      "tolerance" : 1.0E-15
+    }
+  ],
+  "external_loading_conditions": {
+    "gravity": [
+      0,
+      -9.81
+    ]
+  },
+  "analysis": {
+    "type": "MPMExplicit2D",
+    "dt": 0.000001,
+    "locate_particles": false,
+    "uuid": "2d-sand-column",
+    "nsteps": 800000,
+    "velocity_update": false,
+    "resume": {
+      "resume": false,
+      "uuid": "2d-sand-column",
+      "step": 81374
+    }
+  },
+  "post_processing": {
+    "path": "results/",
+    "output_steps": 2500,
+    "vtk": ["stresses","displacements"]
+  }
+}
