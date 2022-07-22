@@ -5,3 +5,5 @@ gns-data/
 *entity_sets.json
 *.e*
 *.o*
+/mpm
+.idea/
