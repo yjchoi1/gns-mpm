@@ -35,8 +35,8 @@ ds = data_loader.get_data_loader_by_samples(path=f"{data_path}train.npz",
                                               batch_size=2,
                                               shuffle=False)
 
-# length of ds is, (trajectory_length - 6)*(n_trajectory)
-print(len(ds)) # 1413 =  (320-6)*9
+# length of ds is, (trajectory_length - 6)*(n_trajectory)/2
+print(len(ds)) # 1413 =  (320-6)*9/2
 
 # Look at the first 2 trajectory.
 for i, ((position, particle_type, n_particles_per_example), labels) in enumerate(ds):
@@ -74,7 +74,7 @@ node_features = [
 ]
 nparticles_per_example = [len(node_features[0]), len(node_features[1])]
 node_features = np.concatenate(node_features)
-radius = 1.2
+radius = 1.5
 
 # Batch_ids are the flattened ids (0 or 1) represents
 # where the node features are come from which batch.
@@ -84,13 +84,12 @@ batch_ids = torch.cat(
 # radius_graph accepts r < radius not r <= radius
 # A torch tensor list of source and target nodes with shape (2, nedges)
 edge_index = radius_graph(
-    torch.tensor(node_features), r=radius, batch=batch_ids)
+    torch.tensor(node_features), r=radius, batch=batch_ids, loop=False)
 # edge_index = np.array(edge_index)
 
-# The flow direction when using in combination with message passing is
-# "source_to_target"
-receivers = edge_index[0, :]
-senders = edge_index[1, :]
+# sender and receiver
+receiver = edge_index[0, :]
+sender = edge_index[1, :]
 
 # Find edge index where sender==receiver
 edge_index_inverted = torch.empty(edge_index.shape, dtype=torch.int64)
@@ -101,7 +100,12 @@ bidirectional_edge_index = torch.tensor(
             for j, receiver2sender in enumerate(edge_index_inverted.T[i:])
             if torch.equal(sender2receiver, receiver2sender)]
 )
+print(bidirectional_edge_index)
 
+# for i, sender2receiver in enumerate(edge_index.T):
+#     for j, receiver2sender in enumerate(edge_index_inverted.T[i:]):
+#         if torch.equal(sender2receiver, receiver2sender):
+#             print(i, j+i)
 
 
 # Show graph connectivity plot
