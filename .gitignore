@@ -3,4 +3,8 @@ gns-data/
 *particles.txt
 *mesh.txt
 *entity_sets.json
+.idea/
+gns/.idea/
+mpm/
+train.npz
 

@@ -15,16 +15,17 @@
 set -e
 
 # start in slurm_scripts
-cd ..
 source start_venv.sh
-
+	
 # assume data is already downloaded and hardcode WaterDropSample
-data="Sand-3D"
-python3 -m gns.train --data_path="${SCRATCH}/gns_pytorch/${data}/dataset/" \
---model_path="${SCRATCH}/gns_pytorch/${data}/models/" \
---output_path="${SCRATCH}/gns_pytorch/${data}/rollouts/" \
---nsave_steps=10000 \
---cuda_device_number=0 \
---ntraining_steps=5000000 \
---model_file="latest" \
---train_state_file="latest"
+
+export DATASET_NAME="sand-2d"
+export WORK_DIR="../gns-data"
+
+python3 -m gns.train --data_path="${WORK_DIR}/datasets/${DATASET_NAME}" \
+--model_path="${WORK_DIR}/models/${DATASET_NAME}" \
+--output_path=""${WORK_DIR}/rollouts/${DATASET_NAME}" \
+--nsave_steps=100 \
+--ntraining_steps=300 \
+# --model_file="latest" \
+# --train_state_file="latest"

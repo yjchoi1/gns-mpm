@@ -201,14 +201,17 @@ class InteractionNetwork(MessagePassing):
   def update(self,
              x_updated: torch.tensor,
              x: torch.tensor,
+             edge_index: torch.tensor,
              edge_features: torch.tensor):
     """Update the particle state representation
 
     Args:
+      x_updated: Updated particle state representation as a torch tensor with
+        shape (nparticles, nnode_in=latent_dim of 128)
       x: Particle state representation as a torch tensor with shape 
         (nparticles, nnode_in=latent_dim of 128)
-      x_updated: Updated particle state representation as a torch tensor with 
-        shape (nparticles, nnode_in=latent_dim of 128)
+      edge_index: A torch tensor list of source and target nodes with shape
+        (2, nedges)
       edge_features: Edge features as a torch tensor with shape 
         (nedges, nedge_out=latent_dim of 128)
 
@@ -219,6 +222,22 @@ class InteractionNetwork(MessagePassing):
     # [nparticles, latent_dim (or nnode_in) *2]
     x_updated = torch.cat([x_updated, x], dim=-1)
     x_updated = self.node_fn(x_updated)
+
+    #####################################################
+    # Pseudo code for conservation of momentum implementation
+    # 1. Get edge index of batch
+    # 2. Get bidirectional edge index
+    edge_index_inverted = torch.empty(edge_index.shape, dtype=torch.int64)
+    edge_index_inverted[[0, 1], :] = edge_index[[1, 0], :]
+    bidirectional_edge_index = torch.tensor(
+        [[i, j + i] for i, sender2receiver in enumerate(edge_index.T)
+         for j, receiver2sender in enumerate(edge_index_inverted.T[i:])
+         if torch.equal(sender2receiver, receiver2sender)]
+    )
+    # 3. Assign bidirectional edges to have a negatively same value
+    edge_features[bidirectional_edge_index[0], :] = -edge_features[bidirectional_edge_index[1], :]
+    #####################################################
+
     return x_updated, edge_features
 
 
