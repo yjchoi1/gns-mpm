@@ -2,6 +2,7 @@ from typing import List
 import torch
 import torch.nn as nn
 from torch_geometric.nn import MessagePassing
+import sys
 
 
 def build_mlp(
@@ -108,6 +109,7 @@ class Encoder(nn.Module):
         (nparticles, nedge_input_features)
 
     """
+    # print(f'Shape of node embedding for input of encoder: {x.shape}')
     return self.node_fn(x), self.edge_fn(edge_features)
 
 
@@ -165,6 +167,8 @@ class InteractionNetwork(MessagePassing):
       tuple: Updated node and edge features
     """
     # Save particle state and edge features
+    print(f'(Inside IN) x for interaction net from encoder: {x.shape}')
+    print(f"(Inside IN) edge feature for interaction net from encoder: {edge_features.shape}")
     x_residual = x
     edge_features_residual = edge_features
     # Start propagating messages.
@@ -172,7 +176,7 @@ class InteractionNetwork(MessagePassing):
     # construct messages and to update node embeddings.
     x, edge_features = self.propagate(
         edge_index=edge_index, x=x, edge_features=edge_features)
-
+    print(f'(Inside IN) x after interaction net: {x.shape}')
     return x + x_residual, edge_features + edge_features_residual
 
   def message(self,
@@ -197,24 +201,29 @@ class InteractionNetwork(MessagePassing):
     # Concat edge features with a final shape of [nedges, latent_dim*3]
     edge_features = torch.cat([x_i, x_j, edge_features], dim=-1)
     edge_features = self.edge_fn(edge_features)
-
-    #####################################################
-    # Pseudo code for conservation of momentum implementation
-    # 1. Get edge index of batch
-    # 2. Get bidirectional edge index
-    print(edge_index)
-    edge_index_inverted = torch.empty(edge_index.shape, dtype=torch.int64)
-    print("here1")
-    edge_index_inverted[[0, 1], :] = edge_index[[1, 0], :]
-    print("here2")
-    bidirectional_edge_index = torch.tensor(
-        [[i, j + i] for i, sender2receiver in enumerate(edge_index.T)
-         for j, receiver2sender in enumerate(edge_index_inverted.T[i:])
-         if torch.equal(sender2receiver, receiver2sender)]
-    )
-    print("here3")
-    # 3. Assign bidirectional edges to have negatively the same value
-    edge_features[bidirectional_edge_index[0], :] = -edge_features[bidirectional_edge_index[1], :]
+    # print(x_i.shape)
+    print(f"(message) edge shape of message {edge_features.shape}")
+    print(f"(message) x shape of message {x_i.shape}")
+    # print(edge_index.shape)
+    # print(edge_features.shape)
+    # sys.exit('error')
+    # #####################################################
+    # # Pseudo code for conservation of momentum implementation
+    # # 1. Get edge index of batch
+    # # 2. Get bidirectional edge index
+    # print(edge_index)
+    # edge_index_inverted = torch.empty(edge_index.shape, dtype=torch.int64)
+    # print("here1")
+    # edge_index_inverted[[0, 1], :] = edge_index[[1, 0], :]
+    # print("here2")
+    # bidirectional_edge_index = torch.tensor(
+    #     [[i, j + i] for i, sender2receiver in enumerate(edge_index.T)
+    #      for j, receiver2sender in enumerate(edge_index_inverted.T[i:])
+    #      if torch.equal(sender2receiver, receiver2sender)]
+    # )
+    # print("here3")
+    # # 3. Assign bidirectional edges to have negatively the same value
+    # edge_features[bidirectional_edge_index[0], :] = -edge_features[bidirectional_edge_index[1], :]
     #####################################################
 
     return edge_features
@@ -312,8 +321,14 @@ class Processor(MessagePassing):
         (nparticles, latent_dim)
 
     """
+    print(f'(In Processor) x shape from Encoder for processor {x.shape}')
+    print(f'(In Processor) edge shape from Encoder for processor {edge_features.shape}')
     for gnn in self.gnn_stacks:
+      print(f'(In Processor) x shape in the processor {x.shape}')
+      print(f'(In Processor) edge shape from Encoder for processor {edge_features.shape}')
       x, edge_features = gnn(x, edge_index, edge_features)
+      print(f'(In Processor) x shape out of processor {x.shape}')
+      print(f'(In Processor) edge shape from Encoder for processor {edge_features.shape}')
     return x, edge_features
 
 
@@ -424,7 +439,13 @@ class EncodeProcessDecode(nn.Module):
           (nedges, nedge_in_features)
 
     """
+    print(f'(In EPD) x shape before Encoder {x.shape}')
+    print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
     x, edge_features = self._encoder(x, edge_features)
+    print(f'(In EPD)x shape before Processor {x.shape}')
+    print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
     x, edge_features = self._processor(x, edge_index, edge_features)
+    print(f'(In EPD)x shape before Decoder {x.shape}')
+    print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
     x = self._decoder(x)
     return x
