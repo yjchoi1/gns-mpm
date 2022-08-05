@@ -5,6 +5,6 @@ gns-data/
 *entity_sets.json
 .idea/
 gns/.idea/
+gns/*.gif
 mpm/
-train.npz
-*.gif
+*.npz

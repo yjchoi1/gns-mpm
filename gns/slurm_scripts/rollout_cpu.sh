@@ -6,5 +6,5 @@ source ~/python_envs/venv-gns-cpu/bin/activate
 export DATASET_NAME="sand-2d"
 export WORK_DIR="../gns-data"
 
-python3 -m gns.train --mode="rollout" --data_path="${WORK_DIR}/datasets/${DATASET_NAME}/" --model_path="${WORK_DIR}/models/${DATASET_NAME}/" --model_file="model-r055-970000.pt" --train_state_file="train_state-r055-970000.pt" --output_path="${WORK_DIR}/rollouts/${DATASET_NAME}/"
+python3 -m gns.train --mode="rollout" --data_path="${WORK_DIR}/datasets/${DATASET_NAME}/" --model_path="${WORK_DIR}/models/${DATASET_NAME}/" --model_file="model-deepmind-10000000.pt" --train_state_file="train_state-deepmind-10000000.pt" --output_path="${WORK_DIR}/rollouts/${DATASET_NAME}/"
 
