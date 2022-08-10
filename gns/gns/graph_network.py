@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 from torch_geometric.nn import MessagePassing
 import sys
-
+import pickle
+import numpy as np
 
 def build_mlp(
         input_size: int,
@@ -167,8 +168,6 @@ class InteractionNetwork(MessagePassing):
       tuple: Updated node and edge features
     """
     # Save particle state and edge features
-    print(f'(Inside IN) x for interaction net from encoder: {x.shape}')
-    print(f"(Inside IN) edge feature for interaction net from encoder: {edge_features.shape}")
     x_residual = x
     edge_features_residual = edge_features
     # Start propagating messages.
@@ -176,14 +175,13 @@ class InteractionNetwork(MessagePassing):
     # construct messages and to update node embeddings.
     x, edge_features = self.propagate(
         edge_index=edge_index, x=x, edge_features=edge_features)
-    print(f'(Inside IN) x after interaction net: {x.shape}')
     return x + x_residual, edge_features + edge_features_residual
 
   def message(self,
               x_i: torch.tensor,
               x_j: torch.tensor,
               edge_index: torch.tensor,
-              edge_features: torch.tensor) -> torch.tensor:
+              edge_features: torch.tensor):
     """Constructs message from j to i of edge :math:`e_{i, j}`. Tensors :obj:`x`
     passed to :meth:`propagate` can be mapped to the respective nodes :math:`i`
     and :math:`j` by appending :obj:`_i` or :obj:`_j` to the variable name,
@@ -198,33 +196,57 @@ class InteractionNetwork(MessagePassing):
         (nedges, nedge_in=latent_dim of 128)
 
     """
+
+    # Get step info
+    unpickleFile = open('current_step.pkl', 'rb')
+    step = pickle.load(unpickleFile)
+    print(f"Read step: {step}")
+
+    see_step = 210
+    # Save edge_features before processing at specified step
+    if step == see_step:
+        output = open(f'edge_features_unprocessed-step{step}.pkl', 'wb')
+        pickle.dump(edge_features, output)
+        output.close()
+
     # Concat edge features with a final shape of [nedges, latent_dim*3]
     edge_features = torch.cat([x_i, x_j, edge_features], dim=-1)
     edge_features = self.edge_fn(edge_features)
-    # print(x_i.shape)
-    print(f"(message) edge shape of message {edge_features.shape}")
-    print(f"(message) x shape of message {x_i.shape}")
-    # print(edge_index.shape)
-    # print(edge_features.shape)
-    # sys.exit('error')
-    # #####################################################
-    # # Pseudo code for conservation of momentum implementation
-    # # 1. Get edge index of batch
-    # # 2. Get bidirectional edge index
-    # print(edge_index)
-    # edge_index_inverted = torch.empty(edge_index.shape, dtype=torch.int64)
-    # print("here1")
-    # edge_index_inverted[[0, 1], :] = edge_index[[1, 0], :]
-    # print("here2")
-    # bidirectional_edge_index = torch.tensor(
-    #     [[i, j + i] for i, sender2receiver in enumerate(edge_index.T)
-    #      for j, receiver2sender in enumerate(edge_index_inverted.T[i:])
-    #      if torch.equal(sender2receiver, receiver2sender)]
-    # )
-    # print("here3")
-    # # 3. Assign bidirectional edges to have negatively the same value
-    # edge_features[bidirectional_edge_index[0], :] = -edge_features[bidirectional_edge_index[1], :]
-    #####################################################
+
+    # Save edge_features after processing at specified step
+    if step == see_step:
+        # Find edge index where sender==receiver
+        edge_index_inverted = torch.empty(edge_index.shape, dtype=torch.int64)
+        edge_index_inverted[[0, 1], :] = edge_index[[1, 0], :]
+
+        # Get connectivity_indices:
+        # e.g., ((bidirectional message id pair), (connected node pair))
+        connectivity_indices = []
+        length = len(edge_index.T)
+        for i, sender2receiver in enumerate(edge_index.T):
+            # if i < 5:
+            for j, receiver2sender in enumerate(edge_index_inverted.T[i:]):
+                if torch.equal(sender2receiver, receiver2sender):
+                    bidirectional_edge_id = i, j + i
+                    bidirectional_node_id = edge_index.T[i].tolist()
+                    connectivity_index = bidirectional_edge_id, bidirectional_node_id
+                    print(connectivity_index)
+                    connectivity_indices.append(connectivity_index)
+
+        # # save necessary data
+        # output = open(f'edge_features_processed-step{see_step}.pkl', 'wb')
+        # pickle.dump(edge_features, output)
+        # output.close()
+        # output = open(f'edge_index-step{see_step}.pkl', 'wb')
+        # pickle.dump(edge_index, output)
+        # output.close()
+        # output = open(f'connectivity_indices-step{see_step}.pkl', 'wb')
+        # pickle.dump(connectivity_indices, output)
+        # output.close()
+
+        # # save as `.npz`
+        np.savez_compressed()
+        sys.exit()
 
     return edge_features
 
@@ -321,14 +343,8 @@ class Processor(MessagePassing):
         (nparticles, latent_dim)
 
     """
-    print(f'(In Processor) x shape from Encoder for processor {x.shape}')
-    print(f'(In Processor) edge shape from Encoder for processor {edge_features.shape}')
     for gnn in self.gnn_stacks:
-      print(f'(In Processor) x shape in the processor {x.shape}')
-      print(f'(In Processor) edge shape from Encoder for processor {edge_features.shape}')
       x, edge_features = gnn(x, edge_index, edge_features)
-      print(f'(In Processor) x shape out of processor {x.shape}')
-      print(f'(In Processor) edge shape from Encoder for processor {edge_features.shape}')
     return x, edge_features
 
 
@@ -427,7 +443,7 @@ class EncodeProcessDecode(nn.Module):
   def forward(self,
               x: torch.tensor,
               edge_index: torch.tensor,
-              edge_features: torch.tensor):
+              edge_features: torch.tensor,):
     """The forward hook runs at instatiation of EncodeProcessorDecode class.
 
       Args:
@@ -439,13 +455,15 @@ class EncodeProcessDecode(nn.Module):
           (nedges, nedge_in_features)
 
     """
-    print(f'(In EPD) x shape before Encoder {x.shape}')
-    print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
+    # print(f'(In EPD) x shape before Encoder {x.shape}')
+    # print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
+    # output = open('x_before_encoder.pkl', 'wb')
+    # pickle.dump(x, output)
     x, edge_features = self._encoder(x, edge_features)
-    print(f'(In EPD)x shape before Processor {x.shape}')
-    print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
+    # print(f'(In EPD)x shape before Processor {x.shape}')
+    # print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
     x, edge_features = self._processor(x, edge_index, edge_features)
-    print(f'(In EPD)x shape before Decoder {x.shape}')
-    print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
+    # print(f'(In EPD)x shape before Decoder {x.shape}')
+    # print(f'(In EPD) edge_features shape before Encoder {edge_features.shape}')
     x = self._decoder(x)
     return x

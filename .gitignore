@@ -8,3 +8,4 @@ gns/.idea/
 gns/*.gif
 mpm/
 *.npz
+*.pkl

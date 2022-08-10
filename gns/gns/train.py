@@ -68,6 +68,12 @@ def rollout(
   predictions = []
 
   for step in range(nsteps):
+
+    print(f"########### At step {step} ##########")
+    output = open('current_step.pkl', 'wb')
+    pickle.dump(step, output)
+    output.close()
+
     # Get next position with shape (nnodes, dim)
     next_position = simulator.predict_positions(
         current_positions,
