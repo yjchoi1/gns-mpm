@@ -233,20 +233,16 @@ class InteractionNetwork(MessagePassing):
                     print(connectivity_index)
                     connectivity_indices.append(connectivity_index)
 
-        # # save necessary data
-        # output = open(f'edge_features_processed-step{see_step}.pkl', 'wb')
-        # pickle.dump(edge_features, output)
-        # output.close()
-        # output = open(f'edge_index-step{see_step}.pkl', 'wb')
-        # pickle.dump(edge_index, output)
-        # output.close()
-        # output = open(f'connectivity_indices-step{see_step}.pkl', 'wb')
-        # pickle.dump(connectivity_indices, output)
-        # output.close()
-
-        # # save as `.npz`
-        np.savez_compressed()
-        sys.exit()
+        # save necessary data
+        output = open(f'edge_features_processed-step{see_step}.pkl', 'wb')
+        pickle.dump(edge_features, output)
+        output.close()
+        output = open(f'edge_index-step{see_step}.pkl', 'wb')
+        pickle.dump(edge_index, output)
+        output.close()
+        output = open(f'connectivity_indices-step{see_step}.pkl', 'wb')
+        pickle.dump(connectivity_indices, output)
+        output.close()
 
     return edge_features
 
