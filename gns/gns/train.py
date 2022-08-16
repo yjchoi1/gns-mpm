@@ -70,7 +70,7 @@ def rollout(
   for step in range(nsteps):
 
     print(f"########### At step {step} ##########")
-    output = open('current_step.pkl', 'wb')
+    output = open('message_data/current_step.pkl', 'wb')
     pickle.dump(step, output)
     output.close()
 

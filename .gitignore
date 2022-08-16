@@ -9,3 +9,5 @@ gns/*.gif
 mpm/
 *.npz
 *.pkl
+*.png
+

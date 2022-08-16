@@ -4,6 +4,8 @@ import numpy as np
 from gns import graph_network
 from torch_geometric.nn import radius_graph
 from typing import Dict
+import pickle
+import sys
 
 
 class LearnedSimulator(nn.Module):
@@ -119,9 +121,23 @@ class LearnedSimulator(nn.Module):
         examples per batch.
       particle_types: Particle types with shape (nparticles).
     """
+
+    # yc: get step info
+    unpickleFile = open('message_data/current_step.pkl', 'rb')
+    step = pickle.load(unpickleFile)
+    print(f"Read step for encoder_preprocessor: {step}")
+
     nparticles = position_sequence.shape[0]
     most_recent_position = position_sequence[:, -1]  # (n_nodes, 2)
     velocity_sequence = time_diff(position_sequence)
+
+    # save the most_recent_position
+    see_step = range(120, 220, 10)
+    # Save edge_features before processing at specified step
+    if step in see_step:
+        output = open(f'message_data/most_recent_position-step{step}.pkl', 'wb')
+        pickle.dump(most_recent_position, output)
+        output.close()
 
     # Get connectivity of the graph with shape of (nparticles, 2)
     senders, receivers = self._compute_graph_connectivity(
@@ -212,6 +228,19 @@ class LearnedSimulator(nn.Module):
     acceleration = (
         normalized_acceleration * acceleration_stats['std']
     ) + acceleration_stats['mean']
+
+    # yc: get step info
+    unpickleFile = open('message_data/current_step.pkl', 'rb')
+    step = pickle.load(unpickleFile)
+    print(f"Read step for _decoder_postprocessor: {step}")
+
+    # save the most_recent_position
+    see_step = range(120, 220, 10)
+    # Save edge_features before processing at specified step
+    if step in see_step:
+        output = open(f'message_data/accel-step{step}.pkl', 'wb')
+        pickle.dump(np.array(acceleration), output)
+        output.close()
 
     # Use an Euler integrator to go from acceleration to position, assuming
     # a dt=1 corresponding to the size of the finite difference.

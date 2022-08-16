@@ -197,15 +197,18 @@ class InteractionNetwork(MessagePassing):
 
     """
 
-    # Get step info
-    unpickleFile = open('current_step.pkl', 'rb')
+    # yc: Get step info
+    unpickleFile = open('message_data/current_step.pkl', 'rb')
     step = pickle.load(unpickleFile)
-    print(f"Read step: {step}")
+    print(f"Read step for message: {step}")
+    unpickleFile = open('message_data/current_gnn_stack.pkl', 'rb')
+    stack = pickle.load(unpickleFile)
+    print(f"Read gnn stack number: {stack}")
 
-    see_step = 210
+    see_step = range(120, 220, 10)
     # Save edge_features before processing at specified step
-    if step == see_step:
-        output = open(f'edge_features_unprocessed-step{step}.pkl', 'wb')
+    if step in see_step and (stack == 0 or 1):
+        output = open(f'message_data/edge_features_unprocessed-step{step}-stack{stack}.pkl', 'wb')
         pickle.dump(edge_features, output)
         output.close()
 
@@ -214,7 +217,7 @@ class InteractionNetwork(MessagePassing):
     edge_features = self.edge_fn(edge_features)
 
     # Save edge_features after processing at specified step
-    if step == see_step:
+    if step in see_step and (stack == 0 or 1):
         # Find edge index where sender==receiver
         edge_index_inverted = torch.empty(edge_index.shape, dtype=torch.int64)
         edge_index_inverted[[0, 1], :] = edge_index[[1, 0], :]
@@ -234,15 +237,18 @@ class InteractionNetwork(MessagePassing):
                     connectivity_indices.append(connectivity_index)
 
         # save necessary data
-        output = open(f'edge_features_processed-step{see_step}.pkl', 'wb')
+        output = open(f'message_data/edge_features_processed-step{step}-stack{stack}.pkl', 'wb')
         pickle.dump(edge_features, output)
         output.close()
-        output = open(f'edge_index-step{see_step}.pkl', 'wb')
+        output = open(f'message_data/edge_index-step{step}-stack{stack}.pkl', 'wb')
         pickle.dump(edge_index, output)
         output.close()
-        output = open(f'connectivity_indices-step{see_step}.pkl', 'wb')
+        output = open(f'message_data/connectivity_indices-step{step}-stack{stack}.pkl', 'wb')
         pickle.dump(connectivity_indices, output)
         output.close()
+
+    if step > 210:
+        sys.exit()
 
     return edge_features
 
@@ -339,7 +345,11 @@ class Processor(MessagePassing):
         (nparticles, latent_dim)
 
     """
-    for gnn in self.gnn_stacks:
+    for i, gnn in enumerate(self.gnn_stacks):
+      print(f"At gnn stack {i}")
+      output = open('message_data/current_gnn_stack.pkl', 'wb')
+      pickle.dump(i, output)
+      output.close()
       x, edge_features = gnn(x, edge_index, edge_features)
     return x, edge_features
 
