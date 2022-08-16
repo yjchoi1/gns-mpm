@@ -8,3 +8,5 @@ gns-data/
 /mpm
 .idea/
 *.npz
+*.gif
+*.swp

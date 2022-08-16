@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#SBATCH -J pyt_sand-2d_train         # Job name
-#SBATCH -o pyt_sand-2d_train.o%j     # Name of stdout output file
-#SBATCH -e pyt_sand-2d_train.e%j     # Name of stderr error file
+#SBATCH -A ECS22003
+#SBATCH -J pyt_sand-2d-r070         # Job name
+#SBATCH -o pyt_sand-2d-r070.o%j     # Name of stdout output file
+#SBATCH -e pyt_sand-2d-r070.e%j     # Name of stderr error file
 #SBATCH -p gpu-a100              # Queue (partition) name
 #SBATCH -N 1                     # Total # of nodes (must be 1 for serial)
 #SBATCH -n 1                 # Total # of mpi tasks (should be 1 for serial)
@@ -14,10 +15,7 @@
 source start_venv.sh
 
 # assume data is already downloaded and hardcode WaterDropSample
-export DATASET_NAME="sand-2d"
+export DATASET_NAME="sand-2d-r070"
 export WORK_DIR="../gns-data"
-python3 -m gns.train --data_path="${WORK_DIR}/datasets/${DATASET_NAME}/" \
---model_path="${WORK_DIR}/models/${DATASET_NAME}/" \
---output_path="${WORK_DIR}/rollouts/${DATASET_NAME}/" \
---nsave_steps=50000 \
---ntraining_steps=100000000 \
+
+python3 -m gns.train --data_path="${WORK_DIR}/datasets/${DATASET_NAME}/" --model_path="${WORK_DIR}/models/${DATASET_NAME}/" --output_path="${WORK_DIR}/rollouts/${DATASET_NAME}/" --nsave_steps=50000 --ntraining_steps=100000000
