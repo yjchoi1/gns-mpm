@@ -206,8 +206,9 @@ class InteractionNetwork(MessagePassing):
     print(f"Read gnn stack number: {stack}")
 
     see_step = range(120, 220, 10)
+    see_stack = [0, 1]
     # Save edge_features before processing at specified step
-    if step in see_step and (stack == 0 or 1):
+    if (step in see_step) and (stack in see_stack):
         output = open(f'message_data/edge_features_unprocessed-step{step}-stack{stack}.pkl', 'wb')
         pickle.dump(edge_features, output)
         output.close()
@@ -217,7 +218,7 @@ class InteractionNetwork(MessagePassing):
     edge_features = self.edge_fn(edge_features)
 
     # Save edge_features after processing at specified step
-    if step in see_step and (stack == 0 or 1):
+    if (step in see_step) and (stack in see_stack):
         # Find edge index where sender==receiver
         edge_index_inverted = torch.empty(edge_index.shape, dtype=torch.int64)
         edge_index_inverted[[0, 1], :] = edge_index[[1, 0], :]
