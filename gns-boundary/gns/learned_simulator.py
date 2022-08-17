@@ -248,7 +248,7 @@ class LearnedSimulator(nn.Module):
         
     # Restrict predicted positions to stay inside the boundary
     dimensions = 2
-    radius_offset = 0.0025
+    radius_offset = 0.00125
     boundaries = torch.tensor(
         self._boundaries, requires_grad=False).float().to(self._device)
     clamped_next_positions = []
