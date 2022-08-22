@@ -10,3 +10,6 @@ gns-data/
 *.npz
 *.gif
 *.swp
+*.pyc
+*.gif
+*/__pycache__/*
