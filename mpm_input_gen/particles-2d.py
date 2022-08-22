@@ -25,7 +25,7 @@ def create_particle_array(nparticle_per_dir, x_bound, y_bound, dx, dy, ndim=2, r
 
 particle_set1 = create_particle_array(
     nparticle_per_dir=4,
-    x_bound=[0.0, 0.10], y_bound=[0.0, 0.10],
+    x_bound=[0.2, 0.3], y_bound=[0.1, 0.5],
     dx=0.010, dy=0.010,
     randomness=0.9
 )

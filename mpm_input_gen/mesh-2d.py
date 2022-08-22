@@ -4,13 +4,14 @@ import json
 
 # Inputs
 ndim = 2
-xmin = 0
-ymin = 0
-xmax = 1.0
-ymax = 1.0
+xmin = 0.1
+ymin = 0.1
+xmax = 0.9
+ymax = 0.9
 dx = 0.010
 dy = 0.010
 nnode_in_ele= 4
+particle_geometry = [[0.2, 0.3], [0.1, 0.5]]
 
 # Calculate number of nodes and elements
 nnode_x = (xmax - xmin)/dx + 1
@@ -69,27 +70,35 @@ f.close()
 
 # Entities
 
-id0 = []
-id1 = []
+x_bounds = []
+y_bounds = []
+particles = []
 
 # Find index of nodes that match boundaries
 for i, coordinate in enumerate(xy):
     # x boundaries
     if coordinate[0] == xmin or coordinate[0] == xmax:
-        id0.append(i)
+        x_bounds.append(i)
     if coordinate[1] == ymin or coordinate[1] == ymax:
-        id1.append(i)
+        y_bounds.append(i)
+    if (particle_geometry[0][0] <= coordinate[0] <= particle_geometry[0][1]) \
+        and (particle_geometry[1][0] <= coordinate[1] <= particle_geometry[1][1]):
+        particles.append(i)
 
 # Write `entity_sets.json`
 entity_sets = {
     "node_sets": [
         {
             "id": 0,
-            "set": id0
+            "set": x_bounds
         },
         {
             "id": 1,
-            "set": id1
+            "set": y_bounds
+        },
+        {
+            "id": 2,
+            "set": particles
         }
     ]
 }
