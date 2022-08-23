@@ -4,10 +4,10 @@ import json
 
 # Inputs
 ndim = 2
-xmin = 0.1
-ymin = 0.1
-xmax = 0.9
-ymax = 0.9
+xmin = 0.0
+ymin = 0.0
+xmax = 1.0
+ymax = 1.0
 dx = 0.010
 dy = 0.010
 nnode_in_ele= 4
