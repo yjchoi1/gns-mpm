@@ -71,14 +71,14 @@ def main(unused_argv):
         ax = axes[ax_i]
         ax.set_title(label)
         bounds = rollout_data["metadata"]["bounds"]
-        ax.set_xlim(bounds[0][0]-0.1, bounds[0][1]+0.1)
-        ax.set_ylim(bounds[1][0]-0.1, bounds[1][1]+0.1)
+        ax.set_xlim(bounds[0][0], bounds[0][1])
+        ax.set_ylim(bounds[1][0], bounds[1][1])
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_aspect(1.)
         ax.grid(visible=True)
         points = {
-            particle_type: ax.plot([], [], "o", ms=2, color=color)[0]
+            particle_type: ax.plot([], [], "o", ms=0.1, color=color)[0]
             for particle_type, color in TYPE_TO_COLOR.items()}
         plot_info.append((ax, trajectory, points))
 
@@ -98,7 +98,7 @@ def main(unused_argv):
         fig, update,
         frames=np.arange(0, num_steps, FLAGS.step_stride), interval=10)
 
-    unused_animation.save('rollout.gif', dpi=80, fps=30, writer='imagemagick')
+    unused_animation.save('rollout.gif', dpi=100, fps=30, writer='imagemagick')
     plt.show(block=FLAGS.block_on_show)
 
 

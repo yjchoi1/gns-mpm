@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #SBATCH -A ECS22003
-#SBATCH -J pyt_sand-2d-r075         # Job name
-#SBATCH -o pyt_sand-2d-r075.o%j     # Name of stdout output file
-#SBATCH -e pyt_sand-2d-r075.e%j     # Name of stderr error file
+#SBATCH -J pyt_sand-2d-inc-r075         # Job name
+#SBATCH -o pyt_sand-2d-inc-r075.o%j     # Name of stdout output file
+#SBATCH -e pyt_sand-2d-inc-r075.e%j     # Name of stderr error file
 #SBATCH -p gpu-a100              # Queue (partition) name
 #SBATCH -N 1                     # Total # of nodes (must be 1 for serial)
 #SBATCH -n 1                 # Total # of mpi tasks (should be 1 for serial)

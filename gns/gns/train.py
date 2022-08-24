@@ -282,6 +282,15 @@ def train(
           simulator.save(model_path + 'model-'+str(step)+'.pt')
           train_state = dict(optimizer_state=optimizer.state_dict(), global_train_state={"step":step})
           torch.save(train_state, f"{model_path}train_state-{step}.pt")
+          
+        # Save learning history
+        loss_hist = []
+        if step % (FLAGS.nsave_steps/10) == 0:
+          loss_hist.append(loss)
+        filename = f'loss_hist.pkl'
+        filename = os.path.join(FLAGS.model_path, filename)
+        with open(filename, 'wb') as f:
+            pickle.dump(loss_hist, f)
 
         # Complete training
         if (step >= FLAGS.ntraining_steps):
