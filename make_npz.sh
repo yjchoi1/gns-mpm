@@ -8,7 +8,7 @@
 
 
 export MPM_DIR="./mpm"
-export DATA_NAME="mpm-test2"
+export DATA_NAME="mpm-train25"
 
 
 python3 make_npz/convert_hdf5_to_npz.py --path="${MPM_DIR}/${DATA_NAME}/results/2d-sand-column" --dt=1.0 --output="${MPM_DIR}/${DATA_NAME}/${DATA_NAME}.npz"

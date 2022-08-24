@@ -7,7 +7,7 @@ cd gns
 # workdir
 export WORK_DIR="../gns-data"
 export DATASET_NAME="sand-2d-r075"
-export STEPS=3705000
+export STEPS=4270000
 
 # Generate test rollouts.
 python3 -m gns.train --mode='rollout' --data_path="${WORK_DIR}/datasets/${DATASET_NAME}/" --model_path="${WORK_DIR}/models/${DATASET_NAME}/" --model_file="model-${STEPS}.pt" --train_state_file="train_state-${STEPS}.pt" --output_path="${WORK_DIR}/rollouts/${DATASET_NAME}"
