@@ -14,8 +14,8 @@ dy = 0.010
 nnode_in_ele= 4
 # Inputs for particles, particle_sets
 nparticle_per_dir = 4
-x_range = [0.55, 0.95]
-y_range = [0.0, 0.1]
+x_range = [0.25, 0.45]
+y_range = [0.3, 0.5]
 randomness = 0.9
 
 
