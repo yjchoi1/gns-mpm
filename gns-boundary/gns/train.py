@@ -286,7 +286,7 @@ def train(
         # Save learning history
         loss_hist = []
         if step % (FLAGS.nsave_steps/10) == 0:
-          loss_hist.append(loss)
+          loss_hist.append([step, loss])
         filename = f'loss_hist.pkl'
         filename = os.path.join(FLAGS.model_path, filename)
         with open(filename, 'wb') as f:

@@ -247,16 +247,16 @@ class LearnedSimulator(nn.Module):
         predicted_normalized_acceleration, current_positions)
         
     # Restrict predicted positions to stay inside the boundary
-    dimensions = 2
-    radius_offset = 0.00125
-    boundaries = torch.tensor(
-        self._boundaries, requires_grad=False).float().to(self._device)
-    clamped_next_positions = []
-    for dim in range(dimensions):
-        clamped_next_position = torch.clamp(
-            next_positions[:, dim], boundaries[dim, 0]+radius_offset, boundaries[dim, 1]-radius_offset)
-        clamped_next_positions.append(clamped_next_position)
-    next_positions = torch.vstack(clamped_next_positions).T
+    #dimensions = 2
+    #radius_offset = [0.020, 0]
+    #boundaries = torch.tensor(
+    #    self._boundaries, requires_grad=False).float().to(self._device)
+    #clamped_next_positions = []
+    #for dim in range(dimensions):
+    #    clamped_next_position = torch.clamp(
+    #        next_positions[:, dim], boundaries[dim, 0]+radius_offset[dim], boundaries[dim, 1]-radius_offset[dim])
+    #    clamped_next_positions.append(clamped_next_position)
+    #next_positions = torch.vstack(clamped_next_positions).T
     
     return next_positions
 

@@ -403,4 +403,11 @@ class EncodeProcessDecode(nn.Module):
     x, edge_features = self._encoder(x, edge_features)
     x, edge_features = self._processor(x, edge_index, edge_features)
     x = self._decoder(x)
+    
+    
+    # yc: Acceleration constraint
+    gravity = -6.13125e-05  # when convert g=-9.18 m/s (dt=0.0025) to the g at dt=1.0
+    mean_accel_y = 2.3633e-07
+    std_y = 0.0007
+    x[:, 1] += (gravity - mean_accel_y)/std_y
     return x

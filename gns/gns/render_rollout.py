@@ -78,7 +78,7 @@ def main(unused_argv):
         ax.set_aspect(1.)
         ax.grid(visible=True)
         points = {
-            particle_type: ax.plot([], [], "o", ms=0.1, color=color)[0]
+            particle_type: ax.plot([], [], "o", ms=1.0, color=color)[0]
             for particle_type, color in TYPE_TO_COLOR.items()}
         plot_info.append((ax, trajectory, points))
 

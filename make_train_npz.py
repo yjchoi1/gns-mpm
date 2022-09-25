@@ -1,7 +1,7 @@
 import numpy as np
 
 # Inputs
-ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26]
 save_name = "train.npz"
 dt = 1.0
 
@@ -14,7 +14,7 @@ aggregated_velocities = []
 aggregated_accelerations = []
 
 for id in ids:
-    data = np.load(f'mpm/mpm-train{id}/train-{id}.npz', allow_pickle=True)
+    data = np.load(f'mpm/mpm-small-train{id}/train-s{id}.npz', allow_pickle=True)
     for simulation_id, trajectory in data.items():
         trajectories[f"simulation_trajectory_{id}"] = (trajectory)
 
@@ -61,7 +61,7 @@ statistics = {
 
 # Print statistics
 for key, value in statistics.items():
-    print(f"{key}: {value:.5E}")
+    print(f"{key}: {value:.7E}")
 
 # Save npz
 np.savez_compressed(save_name, **trajectories)
