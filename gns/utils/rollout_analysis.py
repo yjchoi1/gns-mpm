@@ -5,8 +5,8 @@ import os
 
 
 # %% inputs for read rollout.pkl
-rollout_path = "../../gns-data/rollouts/sand-2d-small-r300"
-rollout_filename = "rollout_a=1.pkl"
+rollout_path = "../gns-data/rollouts/sand-2d-small-r300"
+rollout_filename = "rollout_test0-2.pkl"
 # inputs for result
 timesteps = 320
 g = 9.81 * 0.0025**2  # because, in MPM, we used dt=0.0025, and, in GNS, dt=1.0
@@ -29,6 +29,7 @@ mpm_trajectory = np.concatenate([
     rollout_data["ground_truth_rollout"]], axis=0)
 trajectories = (mpm_trajectory, predicted_trajectory)
 
+fig, axs = plt.subplots(3, 2)
 # %% Extract data from runout
 for i, trajectory in enumerate(trajectories):
 
@@ -63,10 +64,6 @@ for i, trajectory in enumerate(trajectories):
 
 
     # %% Plot
-    if i == 0:
-        fig, axs = plt.subplots(3, 2)
-    else:
-        pass
     # plot
     legends = ["mpm", "gns"]
     axs[0, 0].plot(normalized_time, normalized_L_t, label=legends[i])
@@ -90,5 +87,6 @@ for i, trajectory in enumerate(trajectories):
 
     axs[0,0].legend()
     plt.tight_layout()
-
-    fig.show()
+    if i == 1:
+	    plt.show()
+	    plt.savefig("abs.png")
