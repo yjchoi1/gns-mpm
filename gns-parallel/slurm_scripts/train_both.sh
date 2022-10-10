@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #SBATCH -J pyt_train_both         # Job name
 #SBATCH -o pyt_train_both.o%j     # Name of stdout output file
 #SBATCH -e pyt_train_both.e%j     # Name of stderr error file

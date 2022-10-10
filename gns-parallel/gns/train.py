@@ -33,6 +33,7 @@ flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state fil
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
+flags.DEFINE_integer('loss_save_freq', None, help='Frequency to save loss value')
 
 # Learning rate parameters
 flags.DEFINE_float('lr_init', 1e-4, help='Initial learning rate.')
@@ -78,7 +79,7 @@ def rollout(
     # Update kinematic particles from prescribed trajectory.
     kinematic_mask = (particle_types == KINEMATIC_PARTICLE_ID).clone().detach().to(device)
     next_position_ground_truth = ground_truth_positions[:, step]
-    kinematic_mask = kinematic_mask.bool()[:, None].expand(-1, 2)
+    kinematic_mask = kinematic_mask.bool()[:, None].expand(-1, current_positions.shape[-1])
     next_position = torch.where(
         kinematic_mask, next_position_ground_truth, next_position)
     predictions.append(next_position)
@@ -229,11 +230,15 @@ def train(rank, flags, world_size):
 
   dl = distribute.get_data_distributed_dataloader_by_samples(path=f'{flags["data_path"]}train.npz',
                                                              input_length_sequence=INPUT_SEQUENCE_LENGTH,
-                                                             batch_size=flags["batch_size"]*world_size,
+                                                             batch_size=flags["batch_size"],
                                                             )
 
   print(f"rank = {rank}, cuda = {torch.cuda.is_available()}")
   not_reached_nsteps = True
+  
+  # yc: loss history list
+
+
   try:
     while not_reached_nsteps:
       torch.distributed.barrier()
@@ -284,6 +289,9 @@ def train(rank, flags, world_size):
           train_state = dict(optimizer_state=optimizer.state_dict(), global_train_state={"step":step})
           torch.save(train_state, f'{flags["model_path"]}train_state-{step}.pt')
 
+	# Save learning history
+	
+	
         # Complete training
         if (step >= flags["ntraining_steps"]):
           not_reached_nsteps = False
@@ -332,8 +340,8 @@ def _get_simulator(
 
   simulator = learned_simulator.LearnedSimulator(
       particle_dimensions=metadata['dim'],
-      nnode_in=30,
-      nedge_in=3,
+      nnode_in=37 if metadata['dim'] == 3 else 30,
+      nedge_in=metadata['dim'] + 1,
       latent_dim=128,
       nmessage_passing_steps=10,
       nmlp_layers=2,
@@ -367,6 +375,7 @@ def main(_):
   myflags["model_file"] = FLAGS.model_file
   myflags["model_path"] = FLAGS.model_path
   myflags["train_state_file"] = FLAGS.train_state_file
+  myflags["loss_save_freq"] = FLAGS.loss_save_freq
 
   # Read metadata
   if FLAGS.mode == 'train':
