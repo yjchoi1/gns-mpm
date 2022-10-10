@@ -1,8 +1,9 @@
 import numpy as np
 
 # Inputs
-ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26]
-save_name = "train.npz"
+ids = [0, 1, 2, 3, 4, 5]
+dataset_type = "mpm-small-train"
+save_name = "train-small3.npz"
 dt = 1.0
 
 trajectories = {}
@@ -14,7 +15,7 @@ aggregated_velocities = []
 aggregated_accelerations = []
 
 for id in ids:
-    data = np.load(f'mpm/mpm-small-train{id}/train-s{id}.npz', allow_pickle=True)
+    data = np.load(f'mpm/{dataset_type}{id}/train-s{id}.npz', allow_pickle=True)
     for simulation_id, trajectory in data.items():
         trajectories[f"simulation_trajectory_{id}"] = (trajectory)
 

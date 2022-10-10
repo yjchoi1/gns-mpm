@@ -2,6 +2,8 @@ import numpy as np
 import math
 import json
 import argparse
+from matplotlib import pyplot as plt
+import sys
 
 if __name__ == "__main__":
     #%% Inputs for mesh, node, node_sets
@@ -9,13 +11,16 @@ if __name__ == "__main__":
     parser.add_argument('--ndim', default=2, help="Dimension of simulation domain.")
     parser.add_argument('--x_bounds', nargs='+', type=float, help='x boundary. Example: 0.0 1.0')
     parser.add_argument('--y_bounds', nargs='+', type=float, help='y boundary. Example: 0.0 1.0')
-    parser.add_argument('--dx', default=0.025, help="Spacing for meshing")
-    parser.add_argument('--dy', default=0.025, help="Spacing for meshing")
+    parser.add_argument('--dx', default=0.025, type=float, help="Spacing for meshing")
+    parser.add_argument('--dy', default=0.025, type=float, help="Spacing for meshing")
     # Inputs for particles, particle_sets
     parser.add_argument('--nparticle_per_dir', default=4, help="Number of particles to generate in mesh in one direction")
     parser.add_argument('--x_range', nargs='+', type=float, help='Rectangular sand x range. Example: 0.0 1.0')
     parser.add_argument('--y_range', nargs='+', type=float, help='Rectangular sand y range. Example: 0.0 1.0')
-    parser.add_argument('--randomness', default=0.9, help="Random uniform distribution of particle arrangement")
+    parser.add_argument('--randomness', default=0.9, type=float, help="Random uniform distribution of particle arrangement")
+    # Inputs for particle stress
+    parser.add_argument('--k0', type=float, help="K0 for geostatic")
+    parser.add_argument('--density', type=float, help="Unit weight")
     args = parser.parse_args()
 
     # Inputs for mesh, node, node_sets
@@ -30,7 +35,14 @@ if __name__ == "__main__":
     x_range = args.x_range
     y_range = args.y_range
     randomness = args.randomness
-
+    # Inputs for particle stress
+    k0 = args.k0
+    density = args.density
+    if density == None:
+        pass
+    else:
+        unit_weight = density * 9.81
+    
 
     #%% Mesh, node
 
@@ -49,7 +61,7 @@ if __name__ == "__main__":
     for y in ys:
         for x in xs:
             xy.append([x, y])
-    xy = np.round(xy, 5)
+    xy = np.array(xy)
 
     # Make cell groups
     cells = np.empty((int(nele), int(nnode_in_ele)))
@@ -73,7 +85,8 @@ if __name__ == "__main__":
     f = open('mesh.txt', 'a')
     f.write(
         np.array2string(
-            xy, formatter={'float_kind':lambda lam: "%.4f" % lam}, separator='\t', threshold=math.inf
+            # xy, formatter={'float_kind':lambda lam: "%.4f" % lam}, separator='\t', threshold=math.inf
+            xy, separator='\t', threshold=math.inf
         ).replace(' [', '').replace('[', '').replace(']', '')
     )
     f.write('\n')
@@ -83,7 +96,8 @@ if __name__ == "__main__":
     f = open('mesh.txt', 'a')
     f.write(
         np.array2string(
-            cells, formatter={'float_kind':lambda lam: "%.4f" % lam}, separator='\t', threshold=math.inf
+            # cells, formatter={'float_kind':lambda lam: "%.4f" % lam}, separator='\t', threshold=math.inf
+            cells, separator='\t', threshold=math.inf
         ).replace(' [', '').replace('[', '').replace(']', '')
     )
     f.close()
@@ -107,7 +121,7 @@ if __name__ == "__main__":
         for y in ys:
             for x in xs:
                 xy.append([x, y])
-        xy = np.round(xy, 5)
+        xy = np.array(xy)
         xy = xy + np.random.uniform(-offset*randomness, offset*randomness, size=xy.shape)
         return xy
 
@@ -129,10 +143,45 @@ if __name__ == "__main__":
     f = open("particles.txt", "a")
     f.write(
         np.array2string(
-            particles, formatter={'float_kind':lambda lam: "%.4f" % lam}, threshold=math.inf
+            # particles, formatter={'float_kind':lambda lam: "%.4f" % lam}, threshold=math.inf
+            particles, threshold=math.inf
         ).replace(' [', '').replace('[', '').replace(']', '')
     )
     f.close()
+    
+    # Particle stresses
+    if k0 == None:
+        print(f"K0 not provided. Skip making particles_stresses.txt") 
+    else:
+        print(f"Make particles_stresses.txt with K0={k0}")
+        particle_stress = np.zeros((np.shape(particles)[0], ndim))
+        particle_stress[:, 0] = k0 * (y_range[1] - particles[:, 1]) * unit_weight  # K0*H*Unit_Weight
+        particle_stress[:, 1] = (y_range[1] - particles[:, 1]) * unit_weight  # H*Unit_Weight
+
+        # Write the number of stressed particles
+        f = open("particles-stresses.txt", "w")
+        f.write(f"{np.shape(particles)[0]} \n")
+        f.close()
+    
+        # Write coordinates for particles
+        f = open("particles-stresses.txt", "a")
+        f.write(
+            np.array2string(
+                # particles, formatter={'float_kind':lambda lam: "%.4f" % lam}, threshold=math.inf
+                particle_stress, threshold=math.inf
+            ).replace(' [', '').replace('[', '').replace(']', '')
+        )
+        f.close()
+       
+    
+    # plot
+    fig, ax = plt.subplots()
+    ax.scatter(particles[:, 0], particles[:, 1], s=0.5)
+    ax.set_xlim(x_bounds)
+    ax.set_ylim(y_bounds)
+    ax.set_aspect('equal')
+    plt.savefig('initial_config.png')
+   
 
 
     #%% Entities
@@ -181,3 +230,4 @@ if __name__ == "__main__":
 
     with open("entity_sets.json", "w") as f:
         json.dump(entity_sets, f, indent=2)
+    f.close()
