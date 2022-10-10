@@ -150,7 +150,7 @@ class LearnedSimulator(nn.Module):
     distance_to_boundaries = torch.cat(
         [distance_to_lower_boundary, distance_to_upper_boundary], dim=1)
     normalized_clipped_distance_to_boundaries = torch.clamp(
-        distance_to_boundaries / self._connectivity_radius, -1., 1.)
+        distance_to_boundaries / (self._connectivity_radius), -1., 1.)
     # The distance to 4 boundaries (top/bottom/left/right)
     # node_features shape (nparticles, 10+4)
     node_features.append(normalized_clipped_distance_to_boundaries)

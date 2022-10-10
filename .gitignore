@@ -14,3 +14,5 @@ gns-data/
 *.gif
 */__pycache__/*
 /mpm
+*.png
+*.svg
