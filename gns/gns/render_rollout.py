@@ -39,6 +39,8 @@ import numpy as np
 flags.DEFINE_string("rollout_path", None, help="Path to rollout pickle file")
 flags.DEFINE_integer("step_stride", 3, help="Stride of steps to skip.")
 flags.DEFINE_boolean("block_on_show", True, help="For test purposes.")
+flags.DEFINE_string("dataset_name", None, help="Dataset name")
+flags.DEFINE_string("output_tag", None, help="Tag of the output rollout animation, e.g., rollout_{tag}.gif")
 
 FLAGS = flags.FLAGS
 
@@ -98,7 +100,7 @@ def main(unused_argv):
         fig, update,
         frames=np.arange(0, num_steps, FLAGS.step_stride), interval=10)
 
-    unused_animation.save('rollout.gif', dpi=100, fps=30, writer='imagemagick')
+    unused_animation.save(f'../gns-data/rollouts/{FLAGS.dataset_name}/rollout_{FLAGS.output_tag}.gif', dpi=100, fps=30, writer='imagemagick')
     plt.show(block=FLAGS.block_on_show)
 
 
