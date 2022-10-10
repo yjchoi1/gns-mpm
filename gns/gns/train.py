@@ -28,9 +28,11 @@ flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoi
 flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
 flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('rollout_tag', None, help='Tag for saving the rollout, e.g., rollout_{tag}.pkl')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
+flags.DEFINE_integer('loss_save_freq', None, help='Frequency to save loss value')
 
 # Learning rate parameters
 flags.DEFINE_float('lr_init', 1e-4, help='Initial learning rate.')
@@ -153,7 +155,7 @@ def predict(
       # Save rollout in testing
       if FLAGS.mode == 'rollout':
         example_rollout['metadata'] = metadata
-        filename = f'rollout_{example_i}.pkl'
+        filename = f'rollout_{FLAGS.rollout_tag}_{example_i}.pkl'
         filename = os.path.join(FLAGS.output_path, filename)
         with open(filename, 'wb') as f:
           pickle.dump(example_rollout, f)
@@ -236,13 +238,19 @@ def train(
   not_reached_nsteps = True
   
   # yc: loss history list
-  save_name = f'loss_hist.pkl'
-  filename = os.path.join(FLAGS.model_path, save_name)
-  if os.path.isfile(filename):
+  if FLAGS.loss_save_freq is not None:
+    save_name = f'loss_hist.pkl'
+    filename = os.path.join(FLAGS.model_path, save_name)
+    if os.path.isfile(filename):
+      print(f"loss_hist.pkl exists at {filename}")
       with open(filename, 'rb') as f:
-          loss_hist = pickle.load(f)
-  else:
+        loss_hist = pickle.load(f)
+    else:
+      print(f"loss_hist.pkl not found at {filename}. Make it.")
       loss_hist = []
+  else:
+    print("not saving loss history separately")
+  
   
   try:
     while not_reached_nsteps:
@@ -293,11 +301,12 @@ def train(
           train_state = dict(optimizer_state=optimizer.state_dict(), global_train_state={"step":step})
           torch.save(train_state, f"{model_path}train_state-{step}.pt")
           
-        # Save learning history
-        if step % (FLAGS.nsave_steps / 2) == 0:
-          loss_hist.append([step, loss])
-          with open(filename, 'wb') as f:
-            pickle.dump(loss_hist, f)
+	# Save learning history
+        if FLAGS.loss_save_freq is not None:
+          if step % (FLAGS.nsave_steps / FLAGS.loss_save_freq) == 0:
+            loss_hist.append([step, loss])
+            with open(filename, 'wb') as f:
+              pickle.dump(loss_hist, f)
 
         # Complete training
         if (step >= FLAGS.ntraining_steps):
