@@ -237,7 +237,18 @@ def train(rank, flags, world_size):
   not_reached_nsteps = True
   
   # yc: loss history list
-
+  if FLAGS.loss_save_freq is not None:
+    save_name = f'loss_hist.pkl'
+    filename = os.path.join(FLAGS.model_path, save_name)
+    if os.path.isfile(filename):
+      print(f"loss_hist.pkl exists at {filename}")
+      with open(filename, 'rb') as f:
+        loss_hist = pickle.load(f)
+    else:
+      print(f"loss_hist.pkl not found at {filename}. Make it.")
+      loss_hist = []
+  else:
+    print("not saving loss history separately")
 
   try:
     while not_reached_nsteps:
@@ -290,7 +301,11 @@ def train(rank, flags, world_size):
           torch.save(train_state, f'{flags["model_path"]}train_state-{step}.pt')
 
 	# Save learning history
-	
+        if FLAGS.loss_save_freq is not None:
+          if step % (FLAGS.nsave_steps / FLAGS.loss_save_freq) == 0:
+            loss_hist.append([step, loss])
+            with open(filename, 'wb') as f:
+              pickle.dump(loss_hist, f)
 	
         # Complete training
         if (step >= flags["ntraining_steps"]):
