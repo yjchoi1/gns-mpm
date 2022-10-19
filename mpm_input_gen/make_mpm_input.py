@@ -20,7 +20,9 @@ if __name__ == "__main__":
     parser.add_argument('--randomness', default=0.9, type=float, help="Random uniform distribution of particle arrangement")
     # Inputs for particle stress
     parser.add_argument('--k0', type=float, help="K0 for geostatic")
-    parser.add_argument('--density', type=float, help="Unit weight")
+    parser.add_argument('--density', type=float, help="Density of soil")
+    # Inputs for initial velocity of particles
+    parser.add_argument('--initial_vel', nargs='+', type=float, help="Initial velocity value just for plotting configuration figure. Example: 0.1 0.2")
     args = parser.parse_args()
 
     # Inputs for mesh, node, node_sets
@@ -38,11 +40,12 @@ if __name__ == "__main__":
     # Inputs for particle stress
     k0 = args.k0
     density = args.density
-    if density == None:
-        pass
-    else:
+    if density is not None:
         unit_weight = density * 9.81
-    
+    else:
+        pass
+    # Inputs for initial velocity of particles
+    initial_vel = args.initial_vel
 
     #%% Mesh, node
 
@@ -76,6 +79,7 @@ if __name__ == "__main__":
             i += 1
     cells = cells.astype(int)
 
+    print("Make `mesh.txt`")
     # Write the number of nodes
     f = open("mesh.txt", "w")
     f.write(f"{int(nnode)}\t{int(nele)}\n")
@@ -134,6 +138,7 @@ if __name__ == "__main__":
     particles = particle_set1
     nparticles = particles.shape[0]
 
+    print("Make `particles.txt`")
     # Write the number of particles
     f = open("particles.txt", "w")
     f.write(f"{nparticles} \n")
@@ -150,10 +155,8 @@ if __name__ == "__main__":
     f.close()
     
     # Particle stresses
-    if k0 == None:
-        print(f"K0 not provided. Skip making particles_stresses.txt") 
-    else:
-        print(f"Make particles_stresses.txt with K0={k0}")
+    if k0 is not None:
+        print(f"Make `particles_stresses.txt` with K0={k0}, density={density}")
         particle_stress = np.zeros((np.shape(particles)[0], ndim))
         particle_stress[:, 0] = k0 * (y_range[1] - particles[:, 1]) * unit_weight  # K0*H*Unit_Weight
         particle_stress[:, 1] = (y_range[1] - particles[:, 1]) * unit_weight  # H*Unit_Weight
@@ -162,7 +165,7 @@ if __name__ == "__main__":
         f = open("particles-stresses.txt", "w")
         f.write(f"{np.shape(particles)[0]} \n")
         f.close()
-    
+
         # Write coordinates for particles
         f = open("particles-stresses.txt", "a")
         f.write(
@@ -172,11 +175,17 @@ if __name__ == "__main__":
             ).replace(' [', '').replace('[', '').replace(']', '')
         )
         f.close()
-       
-    
+    else:
+        print(f"K0 not provided. Skip making particles_stresses.txt")
+
     # plot
     fig, ax = plt.subplots()
     ax.scatter(particles[:, 0], particles[:, 1], s=0.5)
+    if initial_vel is not None:
+        x_center = (particles[:, 0].max() - particles[:, 0].min())/2 + particles[:, 0].min()
+        y_center = (particles[:, 1].max() - particles[:, 1].min())/2 + particles[:, 1].min()
+        ax.quiver(x_center, y_center, initial_vel[0], initial_vel[1], scale=10)
+        ax.text(x_center, y_center, str(initial_vel))
     ax.set_xlim(x_bounds)
     ax.set_ylim(y_bounds)
     ax.set_aspect('equal')
@@ -204,7 +213,6 @@ if __name__ == "__main__":
 
 
     #%% Write `entity_sets.json`
-
     entity_sets = {
         "node_sets": [
             {
@@ -228,6 +236,7 @@ if __name__ == "__main__":
             ]
     }
 
+    print("Make `entity_sets.json`")
     with open("entity_sets.json", "w") as f:
         json.dump(entity_sets, f, indent=2)
     f.close()
