@@ -237,19 +237,26 @@ def train(
   print(f"device = {device}")
   not_reached_nsteps = True
   
-  # yc: loss history list
+  # yc: loss history using resume option
+  # using resume option
   if FLAGS.loss_save_freq is not None:
-    save_name = f'loss_hist.pkl'
+    print("Save loss history")
+    save_name = 'loss_hist.pkl'
     filename = os.path.join(FLAGS.model_path, save_name)
-    if os.path.isfile(filename):
-      print(f"loss_hist.pkl exists at {filename}")
-      with open(filename, 'rb') as f:
-        loss_hist = pickle.load(f)
+    if FLAGS.model_file is not None:
+      print("Resume training mode")
+      if os.path.isfile(filename):
+        print("Open saved `loss_hist.pkl` and resume saving loss")
+        with open(filename, 'rb') as f:
+          loss_hist = pickle.load(f)
+      else:
+        print(f"`loss_hist.pkl` not found at {FLAGS.model_path}. Create it at resuming state")
+        loss_hist = []
     else:
-      print(f"loss_hist.pkl not found at {filename}. Make it.")
+      print(f"Save loss history at `{filename}`")
       loss_hist = []
   else:
-    print("not saving loss history separately")
+    print("`loss_save_freq` flag is not passed. Skip saving loss history")
   
   
   try:
@@ -300,13 +307,13 @@ def train(
           simulator.save(model_path + 'model-'+str(step)+'.pt')
           train_state = dict(optimizer_state=optimizer.state_dict(), global_train_state={"step":step})
           torch.save(train_state, f"{model_path}train_state-{step}.pt")
-          
-	# Save learning history
+
+        # Save learning history
         if FLAGS.loss_save_freq is not None:
-          if step % (FLAGS.nsave_steps / FLAGS.loss_save_freq) == 0:
-            loss_hist.append([step, loss])
-            with open(filename, 'wb') as f:
-              pickle.dump(loss_hist, f)
+            if step % (FLAGS.nsave_steps / FLAGS.loss_save_freq) == 0:
+                loss_hist.append([step, loss])
+                with open(filename, 'wb') as f:
+                    pickle.dump(loss_hist, f)
 
         # Complete training
         if (step >= FLAGS.ntraining_steps):
