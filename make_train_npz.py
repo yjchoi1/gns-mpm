@@ -1,10 +1,19 @@
 import numpy as np
+import json
 
 # Inputs
-ids = [0, 1, 2, 3, 4, 5]
-dataset_type = "mpm-small-train"
-save_name = "train-small3.npz"
-dt = 1.0
+bounds = [[0.0, 1.0], [0.0, 1.0]]
+sequence_length = int(320)
+default_connectivity_radius = 0.30
+dim = int(2)
+dt_mpm = 0.0025
+dt_gns = 1.0
+
+mpm_dir = "./mpm"
+data_case = "mpm-small-train"
+data_tags = ["1", "2", "3"]
+save_name = "train-small-trial"
+
 
 trajectories = {}
 running_sum = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
@@ -13,9 +22,13 @@ running_count = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_
 aggregated_positions = []
 aggregated_velocities = []
 aggregated_accelerations = []
+data_names = []
 
-for id in ids:
-    data = np.load(f'mpm/{dataset_type}{id}/train-s{id}.npz', allow_pickle=True)
+for id in data_tags:
+    data_name = f"{data_case}{id}"
+    data_names.append(data_name)
+    npz_path = f"{mpm_dir}/{data_name}/{data_name}.npz"
+    data = np.load(npz_path, allow_pickle=True)
     for simulation_id, trajectory in data.items():
         trajectories[f"simulation_trajectory_{id}"] = (trajectory)
 
@@ -27,14 +40,14 @@ for id in ids:
         # compute velocities using finite difference
         # assume velocities before zero are equal to zero
         velocities = np.empty_like(positions)
-        velocities[1:] = (positions[1:] - positions[:-1]) / dt
+        velocities[1:] = (positions[1:] - positions[:-1]) / dt_gns
         velocities[0] = 0
         flattened_velocities = np.reshape(velocities, (-1, array_shape[-1]))
 
         # compute accelerations finite difference
         # assume accelerations before zero are equal to zero
         accelerations = np.empty_like(velocities)
-        accelerations[1:] = (velocities[1:] - velocities[:-1]) / dt
+        accelerations[1:] = (velocities[1:] - velocities[:-1]) / dt_gns
         accelerations[0] = 0
         flattened_accelerations = np.reshape(accelerations, (-1, array_shape[-1]))
 
@@ -65,7 +78,24 @@ for key, value in statistics.items():
     print(f"{key}: {value:.7E}")
 
 # Save npz
-np.savez_compressed(save_name, **trajectories)
+np.savez_compressed(f"{save_name}.npz", **trajectories)
+
+# Save metadata.json
+metadata = {
+    "bounds": bounds,
+    "sequence_length": sequence_length,
+    "default_connectivity_radius": default_connectivity_radius,
+    "dim": dim,
+    "dt": dt_mpm,
+    "vel_mean": [statistics["mean_velocity_x"], statistics["mean_velocity_y"]],
+    "vel_std": [statistics["std_velocity_x"], statistics["std_velocity_y"]],
+    "acc_mean": [statistics["mean_accel_x"], statistics["mean_accel_y"]],
+    "acc_std": [statistics["std_accel_x"], statistics["std_accel_y"]],
+    "data_names": data_names
+}
+
+with open(f"metadata-{save_name}.json", "w") as fp:
+    json.dump(metadata, fp)
 
 # # See npz
 # data = np.load('train.npz', allow_pickle=True)
