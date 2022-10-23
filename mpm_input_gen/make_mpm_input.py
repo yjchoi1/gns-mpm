@@ -182,13 +182,20 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     ax.scatter(particles[:, 0], particles[:, 1], s=0.5)
     if initial_vel is not None:
+        # show velocity quiver and value
         x_center = (particles[:, 0].max() - particles[:, 0].min())/2 + particles[:, 0].min()
         y_center = (particles[:, 1].max() - particles[:, 1].min())/2 + particles[:, 1].min()
         ax.quiver(x_center, y_center, initial_vel[0], initial_vel[1], scale=10)
-        ax.text(x_center, y_center, str(initial_vel))
+        ax.text(x_center, y_center, f"vel = {str(initial_vel)}")
+    # show granular group box location
+    ax.text(x_range[0], y_range[0], f"[{x_range[0]}, {y_range[0]}]")
+    ax.text(x_range[0], y_range[1], f"[{x_range[0]}, {y_range[1]}]")
+    ax.text(x_range[1], y_range[0], f"[{x_range[1]}, {y_range[0]}]")
+    ax.text(x_range[1], y_range[1], f"[{x_range[1]}, {y_range[1]}]")
     ax.set_xlim(x_bounds)
     ax.set_ylim(y_bounds)
     ax.set_aspect('equal')
+    ax.set_title(f"Cell size={dx}x{dy}, Particle/cell={nnode_in_ele**2}, nparticles={nparticles}")
     plt.savefig('initial_config.png')
    
 
