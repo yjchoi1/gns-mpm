@@ -9,7 +9,7 @@
 
 module reset
 
-export MPM_DIR="./mpm/mpm-large-train31/"
+export MPM_DIR="./mpm/mpm-small-train0/"
 echo "${MPM_DIR}"
 
 #/work/08264/baagee/frontera/mpm/build/mpm -i /mpm-initial.json -f "${MPM_DIR}"

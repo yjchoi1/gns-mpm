@@ -14,11 +14,13 @@ if __name__ == "__main__":
     parser.add_argument('--rollout_path', help="Path to rollout")
     parser.add_argument('--rollout_filename', help='File name of the rollout to analyse')
     parser.add_argument('--output_percentile', default=100, type=float, help="Percentile from the farthest runout where the analysis based on")
+    parser.add_argument('--output_filename', help='Output file name to save plots')
     args = parser.parse_args()
 
     rollout_path = args.rollout_path
     rollout_filename = args.rollout_filename
     output_percentile = args.output_percentile
+    output_filename = args.output_filename
     mass = 1
 
     # # %% inputs for read rollout.pkl
@@ -232,11 +234,11 @@ if __name__ == "__main__":
             trajectory_axs[i, j].set_aspect('equal')
 
     # trajectory_fig.colorbar(p, ax=trajectory_axs[:, 3], shrink=0.6)
-    runout_fig.show()
-    runout_fig.savefig(f"{rollout_path}/runout-{rollout_filename}-{int(output_percentile)}percentile.png")
-    energy_fig.show()
-    energy_fig.savefig(f"{rollout_path}/energy-{rollout_filename}.png")
-    trajectory_fig.show()
-    trajectory_fig.savefig(f"{rollout_path}/trajectory-{rollout_filename}.png")
+    # runout_fig.show()
+    runout_fig.savefig(f"{rollout_path}/runout-{output_filename}-{int(output_percentile)}percentile.png")
+    # energy_fig.show()
+    energy_fig.savefig(f"{rollout_path}/energy-{output_filename}.png")
+    # trajectory_fig.show()
+    trajectory_fig.savefig(f"{rollout_path}/trajectory-{output_filename}.png")
     # mpm_trajectory_fig.show()
     # gns_trajectory_fig.show()
