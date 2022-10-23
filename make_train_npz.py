@@ -3,16 +3,18 @@ import json
 
 # Inputs
 bounds = [[0.0, 1.0], [0.0, 1.0]]
-sequence_length = int(320)
-default_connectivity_radius = 0.30
+sequence_length = int(500)
+default_connectivity_radius = 0.020
 dim = int(2)
 dt_mpm = 0.0025
+mpm_cell_size = [0.01, 0.01]
+nparticles_per_cell = int(16)
 dt_gns = 1.0
 
 mpm_dir = "./mpm"
-data_case = "mpm-small-train"
-data_tags = ["1", "2", "3"]
-save_name = "train-small-trial"
+data_case = "mpm-large-train"
+data_tags = [str(i) for i in np.arange(0, 8)]
+save_name = "train-large_0-8"
 
 
 trajectories = {}
@@ -79,6 +81,7 @@ for key, value in statistics.items():
 
 # Save npz
 np.savez_compressed(f"{save_name}.npz", **trajectories)
+print(f"npz saved at: ./{save_name}.npz")
 
 # Save metadata.json
 metadata = {
@@ -91,11 +94,15 @@ metadata = {
     "vel_std": [statistics["std_velocity_x"], statistics["std_velocity_y"]],
     "acc_mean": [statistics["mean_accel_x"], statistics["mean_accel_y"]],
     "acc_std": [statistics["std_accel_x"], statistics["std_accel_y"]],
+    "mpm_cell_size": mpm_cell_size,
+    "nparticles_per_cell": nparticles_per_cell,
     "data_names": data_names
 }
 
 with open(f"metadata-{save_name}.json", "w") as fp:
     json.dump(metadata, fp)
+print(f"metadata saved at: ./{save_name}.json")
+
 
 # # See npz
 # data = np.load('train.npz', allow_pickle=True)
