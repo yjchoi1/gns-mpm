@@ -235,10 +235,10 @@ if __name__ == "__main__":
 
     # trajectory_fig.colorbar(p, ax=trajectory_axs[:, 3], shrink=0.6)
     # runout_fig.show()
-    runout_fig.savefig(f"{rollout_path}/runout-{output_filename}-{int(output_percentile)}percentile.png")
+    runout_fig.savefig(f"{rollout_path}/runout_{output_filename}-{int(output_percentile)}percentile.png")
     # energy_fig.show()
-    energy_fig.savefig(f"{rollout_path}/energy-{output_filename}.png")
+    energy_fig.savefig(f"{rollout_path}/energy_{output_filename}.png")
     # trajectory_fig.show()
-    trajectory_fig.savefig(f"{rollout_path}/trajectory-{output_filename}.png")
+    trajectory_fig.savefig(f"{rollout_path}/trajectory_{output_filename}.png")
     # mpm_trajectory_fig.show()
     # gns_trajectory_fig.show()

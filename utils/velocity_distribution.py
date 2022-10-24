@@ -11,15 +11,19 @@ from scipy import stats
 
 test_rollout_tags = ["test6-2"]
 data_path = "/work2/08264/baagee/frontera/gns-mpm/gns-data/rollouts/sand-2d-small-r300/"
+training_steps = 20000000
 
-def get_simulations(data_path, rollout_tags, trajectory_ID):
+def get_simulations(data_path, rollout_tags, trajectory_ID, training_steps=None):
     # import rollout.pkl
     rollout_filenames = []
     for rollout_tag in rollout_tags:
         for i in trajectory_ID:
-            rollout_filename = "rollout_" + rollout_tag + f"_{i}"
+            if training_steps is not None:
+                rollout_filename = f"rollout_{rollout_tag}_{i}_step{training_steps}"
+            else:
+                rollout_filename = f"rollout_{rollout_tag}_{i}"
             rollout_filenames.append(rollout_filename)
-    print(rollout_filenames)
+    # print(rollout_filenames)
     trajectories = {"mpm": {}, "gns": {}}
     metadatas = {}
     for rollout_filename in rollout_filenames:
@@ -103,7 +107,8 @@ train_trajectories, train_velocities, flattened_train_velocities, train_metadata
 test_trajectories, test_velocities, flattened_test_velocities, test_metadatas = get_simulations(
     data_path=data_path,
     rollout_tags=test_rollout_tags,
-    trajectory_ID=[0]
+    trajectory_ID=[0],
+    training_steps=training_steps
 )
 
 whole_train_vel_distb = whole_velocity_distribution(
@@ -139,7 +144,7 @@ test_rollout_filenames = []
 trajectory_ID = [0]
 for test_rollout_tag in test_rollout_tags:
     for i in trajectory_ID:
-        test_rollout_filename = "rollout_" + test_rollout_tag + f"_{i}"
+        test_rollout_filename = f"rollout_{test_rollout_tag}_{i}_step{training_steps}"
         test_rollout_filenames.append(test_rollout_filename)
 
 
@@ -163,8 +168,8 @@ for test_rollout in test_rollout_filenames:
     timesteps_to_plot[-1] = timesteps_to_plot[-1] - 1  # exclude the last index for consider dimension
     # for timestep in timesteps_to_plot:
     for timestep in timesteps_to_plot:
-        fig, axd = plt.subplot_mosaic([['mpm_disp', 'gns_disp', 'p_distb'],
-                                       ['mpm_vel', 'gns_vel', 'p_distb']],
+        fig, axd = plt.subplot_mosaic([['mpm_disp', 'mpm_vel', 'p_distb'],
+                                       ['gns_disp', 'gns_vel', 'p_distb']],
                                       figsize=(12, 6.5), layout="constrained")
 
         # Trajectory plots
@@ -240,9 +245,9 @@ for test_rollout in test_rollout_filenames:
                            width=bin_width, align='edge', alpha=0.5, color="black", label="Entire train")
         axd['p_distb'].bar(x=bin_start_edges, height=p_test_m,
                            width=bin_width, align='edge', alpha=0.5, color=v_colors_bins, label="Test")
-        axd['p_distb'].set_xlim([0, 0.005])
-        axd['p_distb'].set_ylim([0, 0.05])
-        # ax.set_yscale('log')
+        # axd['p_distb'].set_xlim([0, 0.005])
+        axd['p_distb'].set_ylim([10**(-2), 1.0])
+        axd['p_distb'].set_yscale('log')
         axd['p_distb'].set_xlabel("Velocity Magnitude (m/s)")
         axd['p_distb'].set_ylabel("Probability")
         axd['p_distb'].set_title("Distribution of velocity")
