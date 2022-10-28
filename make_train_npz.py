@@ -3,8 +3,8 @@ import json
 
 # Inputs
 bounds = [[0.0, 1.0], [0.0, 1.0]]
-sequence_length = int(500)
-default_connectivity_radius = 0.020
+sequence_length = int(400)
+default_connectivity_radius = 0.030
 dim = int(2)
 dt_mpm = 0.0025
 mpm_cell_size = [0.01, 0.01]
@@ -12,9 +12,10 @@ nparticles_per_cell = int(16)
 dt_gns = 1.0
 
 mpm_dir = "./mpm"
-data_case = "mpm-large-train"
-data_tags = [str(i) for i in np.arange(0, 8)]
-save_name = "train-large_0-8"
+data_case = "mpm-small-test"
+# data_tags = [str(i) for i in np.arange(0, 24)] + [str(25), str(26)]
+data_tags = ["1-1", "2-1", "3", "4", "0-3", "5-1", "6-1"]
+save_name = "train-small-400step-val"
 
 
 trajectories = {}
