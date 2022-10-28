@@ -157,9 +157,10 @@ if __name__ == "__main__":
     # Particle stresses
     if k0 is not None:
         print(f"Make `particles_stresses.txt` with K0={k0}, density={density}")
-        particle_stress = np.zeros((np.shape(particles)[0], ndim))
+        particle_stress = np.zeros((np.shape(particles)[0], 3))  # second axis is for stress xx, yy, zz
         particle_stress[:, 0] = k0 * (y_range[1] - particles[:, 1]) * unit_weight  # K0*H*Unit_Weight
         particle_stress[:, 1] = (y_range[1] - particles[:, 1]) * unit_weight  # H*Unit_Weight
+        particle_stress[:, 2] = 0  # for 2d case stress zz is zero
 
         # Write the number of stressed particles
         f = open("particles-stresses.txt", "w")
@@ -195,45 +196,73 @@ if __name__ == "__main__":
     ax.set_xlim(x_bounds)
     ax.set_ylim(y_bounds)
     ax.set_aspect('equal')
-    ax.set_title(f"Cell size={dx}x{dy}, Particle/cell={nnode_in_ele**2}, nparticles={nparticles}")
+    ax.set_title(f"Cell size={dx}x{dy}, Particle/cell={nnode_in_ele**2}, nparticles={nparticles} \n"
+                 f"Particle coordinates: "
+                 f"[{x_range[0]}, {y_range[0]}],"
+                 f"[{x_range[0]}, {y_range[1]}],"
+                 f"[{x_range[1]}, {y_range[0]}],"
+                 f"[{x_range[1]}, {y_range[1]}]", fontsize=10)
     plt.savefig('initial_config.png')
    
 
-
     #%% Entities
+    #
+    # x_bounds_node_id = []
+    # y_bounds_node_id = []
+    # particles_id = []
+    #
+    # # Find index of nodes that match boundaries
+    # for i, coordinate in enumerate(xy):
+    #     # x boundaries
+    #     if coordinate[0] == x_bounds[0] or coordinate[0] == x_bounds[1]:
+    #         x_bounds_node_id.append(i)
+    #     if coordinate[1] == y_bounds[0] or coordinate[1] == y_bounds[1]:
+    #         y_bounds_node_id.append(i)
+    # for i, coordinate in enumerate(particle_set1):
+    #     if (x_range[0] <= coordinate[0] <= x_range[1]) \
+    #         and (y_range[0] <= coordinate[1] <= y_range[1]):
+    #         particles_id.append(i)
 
-    x_bounds_node_id = []
-    y_bounds_node_id = []
+    left_bound_node_id = []
+    right_bound_node_id = []
+    bottom_bound_node_id = []
+    upper_bound_node_id = []
     particles_id = []
 
     # Find index of nodes that match boundaries
     for i, coordinate in enumerate(xy):
-        # x boundaries
-        if coordinate[0] == x_bounds[0] or coordinate[0] == x_bounds[1]:
-            x_bounds_node_id.append(i)
-        if coordinate[1] == y_bounds[0] or coordinate[1] == y_bounds[1]:
-            y_bounds_node_id.append(i)
+        if coordinate[0] == x_bounds[0]:
+            left_bound_node_id.append(i)
+        if coordinate[0] == x_bounds[1]:
+            right_bound_node_id.append(i)
+        if coordinate[1] == y_bounds[0]:
+            bottom_bound_node_id.append(i)
+        if coordinate[1] == y_bounds[1]:
+            upper_bound_node_id.append(i)
     for i, coordinate in enumerate(particle_set1):
         if (x_range[0] <= coordinate[0] <= x_range[1]) \
             and (y_range[0] <= coordinate[1] <= y_range[1]):
             particles_id.append(i)
-
 
     #%% Write `entity_sets.json`
     entity_sets = {
         "node_sets": [
             {
                 "id": 0,
-                "set": x_bounds_node_id
+                "set": bottom_bound_node_id
             },
             {
                 "id": 1,
-                "set": y_bounds_node_id
+                "set": upper_bound_node_id
+            },
+            {
+                "id": 2,
+                "set": left_bound_node_id
+            },
+            {
+                "id": 3,
+                "set": right_bound_node_id
             }
-            # {
-            #     "id": 2,
-            #     "set": particles
-            # }
         ],
         "particle_sets": [
                 {
