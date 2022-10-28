@@ -1,9 +1,9 @@
 # GNS-MPM Implementation with 2D Sand column Collapse
-
+> Source of GNS code: https://github.com/geoelements/gns
 # Dataset
 * Dataset should be downloaded with the make `gns-data`.
 	* Link:
-* `mpm` folder should be exist.
+* `mpm` folder should exist.
 
 # Implementation
 1. `source make_mpm_input.sh`: make MPM inputs (e.g., mesh.txt, particles.txt, entity_sets.json).
