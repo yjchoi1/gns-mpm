@@ -222,7 +222,7 @@ if __name__ == "__main__":
                 trajectory[output_timesteps[j], :, 0], trajectory[output_timesteps[j], :, 1],
                 norm=norm,
                 # vmin=np.min(disps[output_timesteps[j]]), vmax=np.max(disps[output_timesteps[j]]),
-                s=0.2, c=disps[output_timesteps[j]], cmap='bwr') # viridis, bwr
+                s=0.2, c=disps[output_timesteps[j]], cmap='viridis') # viridis, bwr
             if i == 0:
                 trajectory_axs[i, j].set_title(f"MPM at $t_c$={np.around(output_critical_timesteps[j], 1)}")
             if i==1:

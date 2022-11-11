@@ -5,7 +5,7 @@ import torch
 from matplotlib import pyplot as plt
 
 # inputs
-datasets = ["sand-2d-small2-r300"]
+datasets = ["sand-small-r300-400step_serial", "sand-small-r300-400step_parallel"]
 
 fig, ax = plt.subplots()
 # Plot loss history

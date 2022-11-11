@@ -59,7 +59,7 @@ def from_h5_to_animation():
 
     def animate(i):
         fig.clear()
-        ax = fig.add_subplot(111, aspect='equal', autoscale_on=False, xlim=(0, 1), ylim=(0, 1))
+        ax = fig.add_subplot(111, aspect='equal', autoscale_on=False)
         # ax.set_xlim(0, 1)
         # ax.set_ylim(0, 1)
         ax.scatter(positions[i][:, 0], positions[i][:, 1], s=1)
