@@ -45,6 +45,7 @@ flags.DEFINE_boolean("block_on_show", True, help="For test purposes.")
 FLAGS = flags.FLAGS
 
 TYPE_TO_COLOR = {
+    1: "red", # for droplet
     3: "black",  # Boundary particles.
     0: "green",  # Rigid solids.
     7: "magenta",  # Goop.
