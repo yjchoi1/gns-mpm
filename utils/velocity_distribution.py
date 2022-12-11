@@ -9,9 +9,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats
 
 
-test_rollout_tags = ["test0-2", "test4", "test5"]
-data_path = "/work2/08264/baagee/frontera/gns-mpm/gns-data/rollouts/sand-2d-small-r300/"
-training_steps = 20000000
+test_rollout_tags = ["test0-2", "test3", "test4", "test5-1", "test4-1", "test4-2"]
+data_path = "/work2/08264/baagee/frontera/gns-mpm/gns-data/backups/rollouts/sand-small-r300-400step_serial/"
+training_steps = 6090000
+train_trajectory_ID = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
 def get_simulations(data_path, rollout_tags, trajectory_ID, training_steps=None):
     # import rollout.pkl
@@ -101,7 +102,7 @@ def bin_and_prob(data, bin_start, bin_end, nbins):
 train_trajectories, train_velocities, flattened_train_velocities, train_metadatas = get_simulations(
     data_path=data_path,
     rollout_tags=["train"],
-    trajectory_ID=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    trajectory_ID=train_trajectory_ID
 )
 
 test_trajectories, test_velocities, flattened_test_velocities, test_metadatas = get_simulations(
@@ -138,14 +139,45 @@ nbins = 100
 # range for bins
 first_edge, last_edge = whole_train_vel_distb['magnitude'].min(), whole_train_vel_distb['magnitude'].max()
 # timesteps to plot
-nsample_timesteps = 3
+critical_timesteps = [0, 0.5, 1.0, 1.25, 1.5, 2.0, 2.5, 2.75, 3.5]
 # get test_rollout file names to plot
 test_rollout_filenames = []
 trajectory_ID = [0]
+# figsize
+figsize_trajectory = (4, 3.5)
+# title
+title_loc = 0.80
+title_fontsize = 10
+# color bar
+colorbar = {"aspect": 30, "labelsize": 8}
+
 for test_rollout_tag in test_rollout_tags:
     for i in trajectory_ID:
         test_rollout_filename = f"rollout_{test_rollout_tag}_{i}_step{training_steps}"
         test_rollout_filenames.append(test_rollout_filename)
+
+# disp for color
+for test_rollout in test_rollout_filenames:
+    # prepare test distribution and overlap to the train distribution plot
+    timesteps = np.shape(test_velocities['gns']['magnitude'][test_rollout])[0]
+    # timesteps_to_plot = np.linspace(0, timesteps, num=nsample_timesteps, endpoint=True, dtype=int)
+    ### Replace timesteps_to_plot from "explicit time" to "normazlied time"
+    dt = test_metadatas[test_rollout]["dt"]
+    g = 9.81 * dt ** 2  # because, in MPM, we used dt=0.0025, and, in GNS, dt=1.0
+    height = np.max(test_trajectories["mpm"][test_rollout][0][:, 1]) - np.min(test_trajectories["mpm"][test_rollout][0][:, 1])
+    critical_time = np.sqrt(height / g)
+    output_critical_timesteps = critical_timesteps + [timesteps / critical_time]
+    output_timesteps = np.around(np.array(output_critical_timesteps) * critical_time, 0)
+    output_timesteps = list(output_timesteps.astype(int))
+    output_timesteps[-1] = timesteps  # to comply with the last index of the list
+    timesteps_to_plot = output_timesteps
+    timesteps_to_plot[-1] = timesteps_to_plot[-1] - 1  # exclude the last index for consider dimension
+
+    # Disp for color
+    for i, timestep in enumerate(timesteps_to_plot):
+        disp_x = test_trajectories["mpm"][test_rollout][0][:, 0]-test_trajectories["mpm"][test_rollout][timestep][:, 0]
+        disp_y = test_trajectories["mpm"][test_rollout][0][:, 1]-test_trajectories["mpm"][test_rollout][timestep][:, 1]
+
 
 
 # prepare train distribution and plot
@@ -178,46 +210,60 @@ for test_rollout in test_rollout_filenames:
     timesteps_to_plot = output_timesteps
     timesteps_to_plot[-1] = timesteps_to_plot[-1] - 1  # exclude the last index for consider dimension
 
+    # Disp magnitude for color
+    disp_magnitudes = {"mpm": [], "gns": []}
+    for simulation in disp_magnitudes.keys():
+        for i, timestep in enumerate(timesteps_to_plot):
+            disp_x = test_trajectories[simulation][test_rollout][0][:, 0]-test_trajectories[simulation][test_rollout][timestep][:, 0]
+            disp_y = test_trajectories[simulation][test_rollout][0][:, 1]-test_trajectories[simulation][test_rollout][timestep][:, 1]
+            disp_magnitude = np.sqrt(disp_x ** 2 + disp_y ** 2)
+            disp_magnitudes[simulation].append(disp_magnitude)
+    whole_disp_mags = {"mpm": [], "gns": []}
+    for simulation in whole_disp_mags.keys():
+        whole_disp_mags[simulation] = np.concatenate(disp_magnitudes[simulation])
+    merged_disp_mags =  np.concatenate((whole_disp_mags["mpm"], whole_disp_mags["gns"]))
+
     # for timestep in timesteps_to_plot:
     for i, timestep in enumerate(timesteps_to_plot):
         fig_disp, axd = plt.subplot_mosaic([['mpm_disp'], ['gns_disp']],
-                                      figsize=(3, 3), sharex=True, layout="constrained")
+                                      figsize=figsize_trajectory, sharex=True, layout="constrained")
         fig_vel, axv = plt.subplot_mosaic([['mpm_vel'], ['gns_vel']],
-                                      figsize=(3, 3), sharex=True, layout="constrained")
+                                      figsize=figsize_trajectory, sharex=True, layout="constrained")
         fig_distb, ax_distb = plt.subplots(figsize=(3, 2.5), layout="constrained")
 
         # Trajectory plots
         bounds = test_metadatas[test_rollout]["bounds"]
 
         # trajectory plot - displacement contour
-        norm = colors.TwoSlopeNorm(vcenter=0.035)  # TODO: `vcenter` value need to be determined
+        # norm = colors.TwoSlopeNorm(vcenter=0.035)  # TODO: `vcenter` value need to be determined
         # mpm displacement
-        disp_x = test_trajectories["mpm"][test_rollout][0][:, 0]-test_trajectories["mpm"][test_rollout][timestep][:, 0]
-        disp_y = test_trajectories["mpm"][test_rollout][0][:, 1]-test_trajectories["mpm"][test_rollout][timestep][:, 1]
-        disp_magnitude = np.sqrt(disp_x**2 + disp_y**2)
         d_mpm = axd['mpm_disp'].scatter(
             test_trajectories["mpm"][test_rollout][timestep][:, 0], test_trajectories["mpm"][test_rollout][timestep][:, 1],
-            s=2, c=disp_magnitude, norm=norm, cmap='viridis')
+            s=2, vmin=np.min(merged_disp_mags), vmax=np.max(merged_disp_mags),
+            c=disp_magnitudes["mpm"][i])
+            # s=2, c=disp_magnitude, norm=norm, cmap='viridis')
         divider = make_axes_locatable(axd['mpm_disp'])
         cax = divider.append_axes('right', size='5%', pad=0.05)
-        fig_disp.colorbar(d_mpm, cax=cax, orientation='vertical')
+        clb = fig_disp.colorbar(d_mpm, cax=cax, orientation='vertical')
+        clb.ax.tick_params(labelsize=colorbar["labelsize"])
         axd['mpm_disp'].set_xlim(bounds[0])
         axd['mpm_disp'].set_ylim(bounds[1][0], bounds[1][1]/2)
-        axd['mpm_disp'].set_title("MPM displacement")
+        axd['mpm_disp'].set_title("MPM", y=title_loc, fontsize=title_fontsize)
         axd['mpm_disp'].set_aspect('equal')
+
         # gns displacement
-        disp_x = test_trajectories["gns"][test_rollout][0][:, 0]-test_trajectories["gns"][test_rollout][timestep][:, 0]
-        disp_y = test_trajectories["gns"][test_rollout][0][:, 1]-test_trajectories["gns"][test_rollout][timestep][:, 1]
-        disp_magnitude = np.sqrt(disp_x**2 + disp_y**2)
         d_gns = axd['gns_disp'].scatter(
             test_trajectories["gns"][test_rollout][timestep][:, 0], test_trajectories["gns"][test_rollout][timestep][:, 1],
-            s=2, c=disp_magnitude, norm=norm, cmap='viridis')
+            s=2, vmin=np.min(merged_disp_mags), vmax=np.max(merged_disp_mags),
+            c=disp_magnitudes["gns"][i])
+            # s=2, c=disp_magnitude, norm=norm, cmap='viridis')
         divider = make_axes_locatable(axd['gns_disp'])
         cax = divider.append_axes('right', size='5%', pad=0.05)
-        fig_disp.colorbar(d_gns, cax=cax, orientation='vertical')
+        clb = fig_disp.colorbar(d_gns, cax=cax, orientation='vertical')
+        clb.ax.tick_params(labelsize=colorbar["labelsize"])
         axd['gns_disp'].set_xlim(bounds[0])
         axd['gns_disp'].set_ylim(bounds[1][0], bounds[1][1]/2)
-        axd['gns_disp'].set_title("GNS displacement")
+        axd['gns_disp'].set_title("GNS", y=title_loc, fontsize=title_fontsize)
         axd['gns_disp'].set_aspect('equal')
 
         # trajectory plot - velocity contour
@@ -229,10 +275,11 @@ for test_rollout in test_rollout_filenames:
             # s=0.3, c=test_velocities["mpm"]["magnitude"][test_rollout][timestep], norm=norm, cmap='viridis')
         divider = make_axes_locatable(axv['mpm_vel'])
         cax = divider.append_axes('right', size='5%', pad=0.05)
-        fig_vel.colorbar(v_mpm, cax=cax, orientation='vertical')
+        clb = fig_vel.colorbar(v_mpm, cax=cax, orientation='vertical')
+        clb.ax.tick_params(labelsize=colorbar["labelsize"])
         axv['mpm_vel'].set_xlim(bounds[0])
         axv['mpm_vel'].set_ylim(bounds[1][0], bounds[1][1]/2)
-        axv['mpm_vel'].set_title("MPM velocity")
+        axv['mpm_vel'].set_title("MPM", y=title_loc, fontsize=title_fontsize)
         axv['mpm_vel'].set_aspect('equal')
         # gns velocity
         v_gns = axv['gns_vel'].scatter(
@@ -241,10 +288,11 @@ for test_rollout in test_rollout_filenames:
             # s=0.3, c=test_velocities["gns"]["magnitude"][test_rollout][timestep], norm=norm, cmap='viridis')
         divider = make_axes_locatable(axv['gns_vel'])
         cax = divider.append_axes('right', size='5%', pad=0.05)
-        fig_vel.colorbar(v_gns, cax=cax, orientation='vertical')
+        clb = fig_vel.colorbar(v_gns, cax=cax, orientation='vertical')
+        clb.ax.tick_params(labelsize=colorbar["labelsize"])
         axv['gns_vel'].set_xlim(bounds[0])
         axv['gns_vel'].set_ylim(bounds[1][0], bounds[1][1]/2)
-        axv['gns_vel'].set_title("GNS velocity")
+        axv['gns_vel'].set_title("GNS", y=title_loc, fontsize=title_fontsize)
         axv['gns_vel'].set_aspect('equal')
         # get color values and divide it into the equal length corresponding to the bins
         v_colors = v_gns.cmap.colors

@@ -12,18 +12,18 @@ from gns import train
 
 
 # Inputs
-data_path = "../gns-data/datasets/sand-2d-small2-r300/"
-model_path = '../gns-data/models/sand-2d-small2-r300/'
-output_path = '../gns-data/rollouts/sand-2d-small2-r300/'
-data_name = 'train'
+data_path = "../gns-data/backups/datasets/sand-small-r300-400step_parallel_dwnsmp/"
+model_path = "../gns-data/backups/models/sand-small-r300-400step_parallel_dwnsmp/"
+output_path = "../gns-data/backups/models/sand-small-r300-400step_parallel_dwnsmp/"
+data_name = 'train-small-400step-val'
 metadata = reading_utils.read_metadata(data_path)
 noise_std = 6.7e-4
 INPUT_SEQUENCE_LENGTH = 6  # So we can calculate the last 5 velocities.
 NUM_PARTICLE_TYPES = 9
 KINEMATIC_PARTICLE_ID = 3
 batch_size = 2
-steps = np.arange(0, 80000, 20000)  # Training steps to evaluate loss
-ntrajectory = 20  # The number of trajectories to evaluate loss
+steps = np.arange(0, 7500000, 10000)  # Training steps to evaluate loss
+ntrajectory = 1  # The number of trajectories to evaluate loss
 
 
 # Set device and import simulator
@@ -86,7 +86,7 @@ for step in steps:
 
 # Evaluate loss at the specified steps
 loss_history = []
-eval_points = np.linspace(0, len(ds), ntrajectory, endpoint=True).astype(int)
+eval_points = np.random.uniform(0, len(ds), ntrajectory).astype(int)
 for model_file in model_files:
     eval_loss = onestep_loss(model_file, ds, eval_points)
     loss_history.append(eval_loss)
@@ -94,8 +94,8 @@ loss_history = np.vstack((steps, loss_history))
 
 # Save loss history
 save_name = f"loss_onestep_{data_name}"
-with open(f"{model_path}{save_name}.pkl", 'wb') as f:
-    pickle.dump(loss_history, f)
+with open(f"{output_path}{save_name}.pkl", 'wb') as f:
+    pickle.dump(np.transpose(loss_history), f)
 
 # fig, ax = plt.subplots()
 # ax.plot(steps, eval_losses)
