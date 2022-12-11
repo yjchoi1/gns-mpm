@@ -16,3 +16,4 @@ gns-data/
 /mpm
 *.png
 *.svg
+./gns_backup

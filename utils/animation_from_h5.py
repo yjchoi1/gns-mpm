@@ -14,10 +14,14 @@ def from_h5_to_animation():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", nargs="+", help="Location of folder containing mpm vtk files")
     parser.add_argument("--output", default="mpm/mpm-6k-train0/results", help="Location to save the animation")
+    parser.add_argument("--xboundary", nargs="+", help="x boundary of simulation domain")
+    parser.add_argument("--yboundary", nargs="+", help="y boundary of simulation domain")
     args = parser.parse_args()
 
     path = args.path
     output = args.output
+    xboundary = args.xboundary
+    yboundary = args.yboundary
     ndim = 2
 
     # check file existence at "path"
@@ -59,9 +63,12 @@ def from_h5_to_animation():
 
     def animate(i):
         fig.clear()
+        xboundary = args.xboundary
+        yboundary = args.yboundary
+        # ax = fig.add_subplot(111, aspect='equal', autoscale_on=False, xlim=xboundary, ylim=yboundary)
         ax = fig.add_subplot(111, aspect='equal', autoscale_on=False)
-        # ax.set_xlim(0, 1)
-        # ax.set_ylim(0, 1)
+        ax.set_xlim([float(xboundary[0]), float(xboundary[1])])
+        ax.set_ylim([float(yboundary[0]), float(yboundary[1])])
         ax.scatter(positions[i][:, 0], positions[i][:, 1], s=1)
         ax.grid(True, which='both')
 
