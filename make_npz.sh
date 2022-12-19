@@ -9,8 +9,8 @@ set -e
 # --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}.npz"
 
 # multiple
-#for ((DATA_TAG=0; DATA_TAG<30; DATA_TAG+=1))
-for DATA_TAG in "1-1" "2-1"
+#for ((DATA_TAG=0; DATA_TAG<35; DATA_TAG+=1))
+for DATA_TAG in "0-2"
   do
     # workdir
     export MPM_DIR="./mpm"
@@ -18,6 +18,7 @@ for DATA_TAG in "1-1" "2-1"
     export DATA_TAG=${DATA_TAG}
     python3 make_npz/convert_hdf5_to_npz.py --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/2d-sand-column" --dt=1.0 \
      --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}.npz"
-    python3 utils/animation_from_h5.py --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/2d-sand-column" \
-     --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results"
+#    python3 utils/animation_from_h5.py --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/2d-sand-column" \
+#     --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results" \
+#     --xboundary 0.0 1.0 --yboundary 0.0 1.0
   done

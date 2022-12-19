@@ -2,20 +2,20 @@ import numpy as np
 import json
 
 # Inputs
-bounds = [[0.0, 1.0], [0.0, 1.0]]
-sequence_length = int(400)
-default_connectivity_radius = 0.030
-dim = int(2)
-dt_mpm = 0.0025
-mpm_cell_size = [0.01, 0.01]
-nparticles_per_cell = int(16)
-dt_gns = 1.0
+bounds = [[-1.0225332856518696, -1.0, -1.0370372322163504], [46.62253328565188, 1.0, 5.1939591703816586]]
+sequence_length = int(20)
+default_connectivity_radius = 10.0
+dim = int(3)
+dt_mpm = None  # 0.0025
+mpm_cell_size = None  # [0.0125, 0.0125]
+nparticles_per_cell = None  # int(16)
+dt_gns = 0.01
 
-mpm_dir = "./mpm"
-data_case = "mpm-small-test"
+mpm_dir = "./gns-data/datasets/test_files" # "./mpm"
+data_case = "test" # "mpm-9k-train"
 # data_tags = [str(i) for i in np.arange(0, 24)] + [str(25), str(26)]
-data_tags = ["1-1", "2-1", "3", "4", "0-3", "5-1", "6-1"]
-save_name = "train-small-400step-val"
+data_tags = np.arange(1, 21, 1)
+save_name = "train-test"
 
 
 trajectories = {}
@@ -30,7 +30,7 @@ data_names = []
 for id in data_tags:
     data_name = f"{data_case}{id}"
     data_names.append(data_name)
-    npz_path = f"{mpm_dir}/{data_name}/{data_name}.npz"
+    npz_path = f"{mpm_dir}/{data_name}.npz"  # f"{mpm_dir}/{data_name}/{data_name}.npz"
     data = np.load(npz_path, allow_pickle=True)
     for simulation_id, trajectory in data.items():
         trajectories[f"simulation_trajectory_{id}"] = (trajectory)
@@ -105,8 +105,8 @@ with open(f"metadata-{save_name}.json", "w") as fp:
 print(f"metadata saved at: ./{save_name}.json")
 
 
-# # See npz
-# data = np.load('train.npz', allow_pickle=True)
-# for simulation_id, trajectory in data.items():
-#     print(simulation_id)
-#     print(trajectory)
+# See npz
+data = np.load('train.npz', allow_pickle=True)
+for simulation_id, trajectory in data.items():
+    print(simulation_id)
+    print(trajectory)

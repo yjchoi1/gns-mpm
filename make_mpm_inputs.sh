@@ -1,14 +1,17 @@
-MPM_DIR="./mpm/mpm-6k-train4"
+MPM_DIR="./mpm/mpm-small-test5-2"
 cd ${MPM_DIR}
 
 python3 ../../mpm_input_gen/make_mpm_input.py \
---x_bounds 0.0 1.5 --y_bounds 0.0 1.5 \
---dx 0.015 --dy 0.015 \
---x_range 1.1 1.4 --y_range 0.0 0.3 \
+--x_bounds 0.0 1.0 --y_bounds 0.0 1.0 \
+--dx 0.0125 --dy 0.0125 \
+--x_range 0.018 0.193 --y_range 0.0 0.35 \
 --randomness 0.8 \
 --k0 0.5 --density 1800.0
-#--initial_vel -1.0 0.0
-#
+#--initial_vel -1.0 0.0 \
+
+
+
+
 
 
 
