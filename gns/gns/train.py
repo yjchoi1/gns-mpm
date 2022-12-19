@@ -156,6 +156,7 @@ def predict(
       # Save rollout in testing
       if FLAGS.mode == 'rollout':
         example_rollout['metadata'] = metadata
+        example_rollout['loss'] = loss.mean()
         filename = f'rollout_{FLAGS.rollout_tag}_{example_i}_step{FLAGS.rollout_step}.pkl'
         filename = os.path.join(FLAGS.output_path, filename)
         with open(filename, 'wb') as f:
