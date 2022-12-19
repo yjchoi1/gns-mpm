@@ -62,6 +62,7 @@ def main(unused_argv):
         rollout_data = pickle.load(file)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    fig.suptitle(rollout_data["loss"].cpu().numpy())
 
     plot_info = []
     for ax_i, (label, rollout_field) in enumerate(

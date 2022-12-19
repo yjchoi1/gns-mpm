@@ -3,6 +3,7 @@
 #SBATCH -J pyt_sand-small-r300-serial         # Job name
 #SBATCH -o pyt_sand-small-r300-serial.o%j     # Name of stdout output file
 #SBATCH -e pyt_sand-small-r300-serial.e%j     # Name of stderr error file
+#SBATCH -A OTH21021
 #SBATCH -p gpu-a100              # Queue (partition) name
 #SBATCH -N 1                     # Total # of nodes (must be 1 for serial)
 #SBATCH -n 1                 # Total # of mpi tasks (should be 1 for serial)
@@ -23,6 +24,6 @@ export WORK_DIR="../gns-data"
 python3 -m gns.train --data_path="${WORK_DIR}/datasets/${DATASET_NAME}/" \
 --model_path="${WORK_DIR}/models/${DATASET_NAME}/" \
 --output_path="${WORK_DIR}/rollouts/${DATASET_NAME}/" \
---nsave_steps=10000 --ntraining_steps=5000000 --loss_save_freq=2 \
+--nsave_steps=10000 --ntraining_steps=20000000 --loss_save_freq=2 \
 --model_file="latest" \
 --train_state_file="latest"
