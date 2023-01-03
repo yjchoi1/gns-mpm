@@ -23,7 +23,9 @@ class LearnedSimulator(nn.Module):
           normalization_stats: Dict,
           nparticle_types: int,
           particle_type_embedding_size,
-          device="cpu"):
+          boundary_augment=1.0,
+          device="cpu"
+  ):
     """Initializes the model.
 
     Args:
@@ -42,6 +44,8 @@ class LearnedSimulator(nn.Module):
         fields, matching the dimensionality of the problem.
       nparticle_types: Number of different particle types.
       particle_type_embedding_size: Embedding size for the particle type.
+      boundary_augment: a factor to enlarge connectivity radius used for computing
+        normalized clipped distance in edge feature.
       device: Runtime device (cuda or cpu).
 
     """
@@ -65,6 +69,7 @@ class LearnedSimulator(nn.Module):
         nmlp_layers=nmlp_layers,
         mlp_hidden_dim=mlp_hidden_dim)
 
+    self._boundary_augment = boundary_augment
     self._device = device
 
   def forward(self):
@@ -94,7 +99,7 @@ class LearnedSimulator(nn.Module):
     # radius_graph accepts r < radius not r <= radius
     # A torch tensor list of source and target nodes with shape (2, nedges)
     edge_index = radius_graph(
-        node_features, r=radius, batch=batch_ids, loop=add_self_edges, max_num_neighbors=64)
+        node_features, r=radius, batch=batch_ids, loop=add_self_edges, max_num_neighbors=128)
 
     # The flow direction when using in combination with message passing is
     # "source_to_target"
@@ -150,7 +155,7 @@ class LearnedSimulator(nn.Module):
     distance_to_boundaries = torch.cat(
         [distance_to_lower_boundary, distance_to_upper_boundary], dim=1)
     normalized_clipped_distance_to_boundaries = torch.clamp(
-        distance_to_boundaries / self._connectivity_radius, -1., 1.)
+        distance_to_boundaries / (self._connectivity_radius*self._boundary_augment), -1., 1.)
     # The distance to 4 boundaries (top/bottom/left/right)
     # node_features shape (nparticles, 10+4)
     node_features.append(normalized_clipped_distance_to_boundaries)

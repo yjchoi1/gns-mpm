@@ -30,6 +30,8 @@ flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoi
 flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
 flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('rollout_tag', None, help='Tag for saving the rollout, e.g., rollout_{tag}.pkl')
+flags.DEFINE_integer('rollout_step', None, help='The number of training steps for rollout. Should be the same as the steps used in model_file')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
@@ -41,6 +43,8 @@ flags.DEFINE_float('lr_decay', 0.1, help='Learning rate decay.')
 flags.DEFINE_integer('lr_decay_steps', int(5e6), help='Learning rate decay steps.')
 
 flags.DEFINE_integer("cuda_device_number", None, help="CUDA device (zero indexed), default is None so default CUDA device will be used.")
+
+FLAGS = flags.FLAGS
 
 Stats = collections.namedtuple('Stats', ['mean', 'std'])
 
@@ -105,9 +109,7 @@ def rollout(
   return output_dict, loss
 
 
-def predict(
-        simulator: learned_simulator.LearnedSimulator,
-        device: str):
+def predict(device: str, FLAGS):
   """Predict rollouts.
 
   Args:
@@ -154,7 +156,8 @@ def predict(
       # Save rollout in testing
       if FLAGS.mode == 'rollout':
         example_rollout['metadata'] = metadata
-        filename = f'rollout_{example_i}.pkl'
+        example_rollout['loss'] = loss.mean()
+        filename = f'rollout_{FLAGS.rollout_tag}_{example_i}_step{FLAGS.rollout_step}.pkl'
         filename = os.path.join(FLAGS.output_path, filename)
         with open(filename, 'wb') as f:
           pickle.dump(example_rollout, f)
@@ -375,6 +378,7 @@ def _get_simulator(
       normalization_stats=normalization_stats,
       nparticle_types=NUM_PARTICLE_TYPES,
       particle_type_embedding_size=16,
+      boundary_augment=metadata['boundary_augment'],
       device=device)
 
   return simulator
@@ -416,7 +420,7 @@ def main(_):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if FLAGS.cuda_device_number is not None and torch.cuda.is_available():
       device = torch.device(f'cuda:{int(FLAGS.cuda_device_number)}')
-    predict(device)
+    predict(device, FLAGS)
 
 if __name__ == '__main__':
   app.run(main)
