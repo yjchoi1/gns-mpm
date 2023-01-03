@@ -45,12 +45,11 @@ def from_h5_to_animation():
         fnumber_and_fname_sorted = sorted(fnumber_and_fname, key=lambda row: row[0])
 
         # get size of trajectory
-        with h5py.File(fnames[0], "r") as f:
+        with h5py.File(fnumber_and_fname_sorted[0][1], "r") as f:
             (nparticles,) = f["table"]["coord_x"].shape
             # print(nparticles)
             # print(f["table"].shape)
         nsteps = len(fnames)
-
         # allocate memory for trajectory
         # assume number of particles does not change along the rollout.
         positions = np.empty((nsteps, nparticles, ndim), dtype=float)
@@ -61,7 +60,9 @@ def from_h5_to_animation():
         for nth_step, (_, fname) in enumerate(fnumber_and_fname_sorted):
             with h5py.File(fname, "r") as f:
                 for idx, name in zip(range(ndim), ["coord_x", "coord_y", "coord_z"]):
-                    positions[nth_step, :, idx] = f["table"][name][:]
+                    missing_particles = nparticles - len(f["table"][name][:])
+                    # get position of each step but pad zero if particles are missing
+                    positions[nth_step, :, idx] = np.pad(f["table"][name][:], (0, missing_particles), 'constant')
 
     if ndim == 2:
         # make animation
