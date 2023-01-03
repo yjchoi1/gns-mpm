@@ -9,9 +9,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats
 
 
-test_rollout_tags = ["test0-2", "test3", "test4", "test5-1", "test4-1", "test4-2"]
-data_path = "/work2/08264/baagee/frontera/gns-mpm/gns-data/backups/rollouts/sand-small-r300-400step_serial/"
-training_steps = 6090000
+test_rollout_tags = ["test0-2", "test3", "test4", "test5-1", "test4", "test4-2"]
+data_path = "/work2/08264/baagee/frontera/gns-mpm/gns-data/rollouts/sand-small-r300-400step_serial/"
+training_steps = 15270000
 train_trajectory_ID = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
 def get_simulations(data_path, rollout_tags, trajectory_ID, training_steps=None):
@@ -102,7 +102,8 @@ def bin_and_prob(data, bin_start, bin_end, nbins):
 train_trajectories, train_velocities, flattened_train_velocities, train_metadatas = get_simulations(
     data_path=data_path,
     rollout_tags=["train"],
-    trajectory_ID=train_trajectory_ID
+    trajectory_ID=train_trajectory_ID,
+    training_steps=training_steps
 )
 
 test_trajectories, test_velocities, flattened_test_velocities, test_metadatas = get_simulations(
@@ -247,7 +248,7 @@ for test_rollout in test_rollout_filenames:
         clb = fig_disp.colorbar(d_mpm, cax=cax, orientation='vertical')
         clb.ax.tick_params(labelsize=colorbar["labelsize"])
         axd['mpm_disp'].set_xlim(bounds[0])
-        axd['mpm_disp'].set_ylim(bounds[1][0], bounds[1][1]/2)
+        axd['mpm_disp'].set_ylim(bounds[1][0], bounds[1][1])
         axd['mpm_disp'].set_title("MPM", y=title_loc, fontsize=title_fontsize)
         axd['mpm_disp'].set_aspect('equal')
 
@@ -262,7 +263,7 @@ for test_rollout in test_rollout_filenames:
         clb = fig_disp.colorbar(d_gns, cax=cax, orientation='vertical')
         clb.ax.tick_params(labelsize=colorbar["labelsize"])
         axd['gns_disp'].set_xlim(bounds[0])
-        axd['gns_disp'].set_ylim(bounds[1][0], bounds[1][1]/2)
+        axd['gns_disp'].set_ylim(bounds[1][0], bounds[1][1])
         axd['gns_disp'].set_title("GNS", y=title_loc, fontsize=title_fontsize)
         axd['gns_disp'].set_aspect('equal')
 
@@ -278,7 +279,7 @@ for test_rollout in test_rollout_filenames:
         clb = fig_vel.colorbar(v_mpm, cax=cax, orientation='vertical')
         clb.ax.tick_params(labelsize=colorbar["labelsize"])
         axv['mpm_vel'].set_xlim(bounds[0])
-        axv['mpm_vel'].set_ylim(bounds[1][0], bounds[1][1]/2)
+        axv['mpm_vel'].set_ylim(bounds[1][0], bounds[1][1])
         axv['mpm_vel'].set_title("MPM", y=title_loc, fontsize=title_fontsize)
         axv['mpm_vel'].set_aspect('equal')
         # gns velocity
@@ -291,7 +292,7 @@ for test_rollout in test_rollout_filenames:
         clb = fig_vel.colorbar(v_gns, cax=cax, orientation='vertical')
         clb.ax.tick_params(labelsize=colorbar["labelsize"])
         axv['gns_vel'].set_xlim(bounds[0])
-        axv['gns_vel'].set_ylim(bounds[1][0], bounds[1][1]/2)
+        axv['gns_vel'].set_ylim(bounds[1][0], bounds[1][1])
         axv['gns_vel'].set_title("GNS", y=title_loc, fontsize=title_fontsize)
         axv['gns_vel'].set_aspect('equal')
         # get color values and divide it into the equal length corresponding to the bins

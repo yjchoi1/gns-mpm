@@ -4,10 +4,11 @@ set -e
 
 # workdir
 export DATASET_NAME="sand-small-r300-400step_serial"
-# for ((STEPS=10000000; STEPS<14000000; STEPS+=1000000))
-#do
-export STEPS=13000000
-export OUTPUT_TAG="test0-2"
+#for ((STEPS=10000000; STEPS<14000000; STEPS+=1000000))
+for STEPS in 15270000
+do
+#export STEPS=15270000
+export OUTPUT_TAG="test4-2"
 export TRAJECTORY_ID="0"
 
 # Change test.npz that is used to make rollout to the specified `test_{OUTPUT_TAG}.npz which you want to make rollout
@@ -30,4 +31,4 @@ python3 utils/render_rollout.py --rollout_path="${WORK_DIR}/rollouts/${DATASET_N
 # Make plots for normalized runout and energy evolution
 export WORK_DIR="gns-data"
 python3 utils/rollout_analysis.py --rollout_path ${WORK_DIR}/rollouts/${DATASET_NAME} --rollout_filename  rollout_${OUTPUT_TAG}_${TRAJECTORY_ID}_step${STEPS} --output_percentile 100 --output_filename="step${STEPS}_${OUTPUT_TAG}_${TRAJECTORY_ID}"
-#done
+done

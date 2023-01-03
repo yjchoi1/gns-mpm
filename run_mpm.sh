@@ -1,18 +1,19 @@
 #!/bin/bash
-#SBATCH -J 3d-sands7
-#SBATCH -o 3d-sands7.o%j
-#SBATCH -e 3d-sands7.e%j
+#SBATCH -J 3dsand_test0-4
+#SBATCH -o 3dsand_test0-4.o%j
+#SBATCH -e 3dsand_test0-4.e%j
 #SBATCH -n 1
 #SBATCH -N 1
 #SBATCH -p small
-#SBATCH -t 3:00:00
+#SBATCH -t 24:00:00
 
 set -e
 
 module reset
 
-
-export MPM_DIR="./mpm/3d-sand7/"
+for i in 0 1 2 3 4
+do
+export MPM_DIR="/work2/08264/baagee/frontera/gns-mpm/mpm/3dsand_test${i}/"
 echo "${MPM_DIR}"
 #echo INPUT_FILE="./input_file.json"
 
@@ -26,5 +27,6 @@ echo "${MPM_DIR}"
 
 #/work/08264/baagee/frontera/mpm/build/mpm -i input_file.json -f "${MPM_DIR}"
 /work/08264/baagee/frontera/mpm/build/mpm -i input_file_resume.json -f "${MPM_DIR}"
+done
 
 #~/Documents/mpm/build/mpm -i /mpm.json -f "${MPM_DIR}"
