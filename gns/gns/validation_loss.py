@@ -12,9 +12,9 @@ from gns import train
 
 
 # Inputs
-data_path = "../gns-data/backups/datasets/sand-small-r300-400step_parallel_dwnsmp/"
-model_path = "../gns-data/backups/models/sand-small-r300-400step_parallel_dwnsmp/"
-output_path = "../gns-data/backups/models/sand-small-r300-400step_parallel_dwnsmp/"
+data_path = "../gns-data/datasets/sand-small-r300_parallel_dwnsmp18/"
+model_path = "../gns-data/models/sand-small-r300_parallel_dwnsmp18/"
+output_path = "../gns-data/models/sand-small-r300_parallel_dwnsmp18/"
 data_name = 'train-small-400step-val'
 metadata = reading_utils.read_metadata(data_path)
 noise_std = 6.7e-4
@@ -22,7 +22,7 @@ INPUT_SEQUENCE_LENGTH = 6  # So we can calculate the last 5 velocities.
 NUM_PARTICLE_TYPES = 9
 KINEMATIC_PARTICLE_ID = 3
 batch_size = 2
-steps = np.arange(0, 7500000, 10000)  # Training steps to evaluate loss
+steps = np.arange(0, 4000000, 20000)  # Training steps to evaluate loss
 ntrajectory = 1  # The number of trajectories to evaluate loss
 
 

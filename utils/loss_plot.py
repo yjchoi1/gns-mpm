@@ -5,7 +5,12 @@ import torch
 from matplotlib import pyplot as plt
 
 # inputs
-datasets = ["sand-small-r300-400step_parallel", "sand-small-r300-400step_serial"]
+datasets = [
+    "sand-small-r300-400step_parallel",
+    "sand-small-r300_parallel_dwnsmp18",
+    "sand-small-r300_parallel_dwnsmp11",  # 11 trajectories
+    "sand-small-r300_parallel_dwnsmp7"
+]
 
 
 # Plot loss history
@@ -29,7 +34,7 @@ for i, dataset in enumerate(datasets):
         data_np = data[j][0], data[j][1].detach().to('cpu').numpy()  # shape=(nsave_steps, 2=(step, loss))
         data_nps.append(data_np)
         # print(data_np)
-    # # load validation loss
+    # load validation loss
     # with open(valid_location, 'rb') as f:
     #     validation_loss = pickle.load(f)
 
@@ -37,15 +42,15 @@ for i, dataset in enumerate(datasets):
     print(np.shape(loss_hist))
     #sys.exit()
 
-
+    # fig, ax = plt.subplots()
     ax.plot(loss_hist[:, 0], loss_hist[:, 1], lw=1, alpha=0.5, label=datasets[i])
     # ax.plot(validation_loss[:, 0], validation_loss[:, 1], alpha=0.5, label="validation", color="red")
     # ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_xlabel("Step")
     ax.set_ylabel("Loss")
-    ax.set_xlim([0, 150000])
-    # ax.set_ylim([10e-5, 10])
+    ax.set_xlim([0, 400000])
+    ax.set_ylim([10e-5, 2])
     ax.legend()
     fig.show()
     fig.savefig(f"/work2/08264/baagee/frontera/gns-mpm/utils/loss{datasets[i]}.png")
