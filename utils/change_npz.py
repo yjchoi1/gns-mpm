@@ -1,8 +1,10 @@
 import numpy as np
 import json
 
-data = np.load(f'gns-data/datasets/NateDrop/train.npz', allow_pickle=True)
-save_name = "nateDrop"
+data = np.load(f'gns-data/datasets/droplet2/merged_train3d.npz', allow_pickle=True)
+save_name = "merged_train2d"
+original_sequence_length = 25001
+sequence_downsample_rate = 100
 trajectories = {}
 running_sum = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
 running_sumsq = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
@@ -12,23 +14,22 @@ aggregated_velocities = []
 aggregated_accelerations = []
 data_names = None
 
-bounds = [[-1.0225332856518696, 46.62253328565188], [5.1939591703816586, -1.0225332856518696]]
-sequence_length = int(101)
+bounds = [[-1.2418140152084631, 46.841814015208456], [-5.16455663821927, 9.321478576384568]]
+sequence_length = int(original_sequence_length/sequence_downsample_rate) + 1
 default_connectivity_radius = 10.0
 dim = int(2)
 dt_mpm = 0.01  # 0.0025
 mpm_cell_size = None  # [0.0125, 0.0125]
 nparticles_per_cell = None  # int(16)
-dt_gns = 0.01
+dt_gns = dt_mpm
 
 # assume that `trajectory` in `data.items()` has already changed from 3d to 2d.
-for i, (simulation_id, (trajectory2d, material)) in enumerate(data.items()):
+for i, (simulation_id, (trajectory3d, material)) in enumerate(data.items()):
     # print(i)
     # trajectory[0] is position sequence (nsequence, nparticles, ndim)
     # trajectory[1] is material type integer (nparticles)
+    trajectory2d = trajectory3d[::sequence_downsample_rate, :, [0, 2]]
     trajectories[simulation_id] = (trajectory2d, material)
-    if i == 15:
-        print(material)
 
     # get positions for each mpm simulation
     array_shape = trajectory2d.shape
