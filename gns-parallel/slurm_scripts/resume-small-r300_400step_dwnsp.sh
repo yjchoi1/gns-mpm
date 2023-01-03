@@ -24,6 +24,6 @@ export WORK_DIR="../gns-data"
 torchrun gns/train.py gns.train --data_path="${WORK_DIR}/datasets/${DATASET_NAME}/" \
 --model_path="${WORK_DIR}/models/${DATASET_NAME}/" \
 --output_path="${WORK_DIR}/rollouts/${DATASET_NAME}/" \
---nsave_steps=10000 --ntraining_steps=10000000 --loss_save_freq=2 \
+--nsave_steps=10000 --ntraining_steps=20000000 --loss_save_freq=2 \
 --model_file="latest" \
 --train_state_file="latest"
