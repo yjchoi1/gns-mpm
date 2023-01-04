@@ -62,17 +62,17 @@ if __name__ == "__main__":
 
     # %% Prepare plots
     # runout and height
-    runout_fig, runout_ax = plt.subplots(figsize=(5, 3.5))
-    # height_ax = runout_ax.twinx()  # make the figure have two y-axis
+    runout_fig, runout_ax = plt.subplots(figsize=(4.5, 3.2))
+    height_ax = runout_ax.twinx()  # make the figure have two y-axis
     runout_legends = (
         ["MPM Runout", "GNS Runout"],
         ["MPM Height", "GNS Height"])
     runout_lines = ["solid", "dashed"]
     runout_colors = ["silver", "black"]
-    # runout_p_sets = []
+    runout_p_sets = []
 
     # energy
-    energy_fig, energy_ax = plt.subplots(figsize=(5, 3.5))
+    energy_fig, energy_ax = plt.subplots(figsize=(4.5, 3.2))
     energy_legends = (
         ["MPM $E_p/E_0$", "GNS $E_p/E_0$"],
         ["MPM $E_k/E_0$", "GNS $E_k/E_0$"],
@@ -169,21 +169,23 @@ if __name__ == "__main__":
                             color=runout_colors[i],
                             linestyle=runout_lines[0],
                             label=runout_legends[0][i])
-        p2 = runout_ax.plot(normalized_time, normalized_H_t,
+        p2 = height_ax.plot(normalized_time, normalized_H_t,
                             color=runout_colors[i],
                             linestyle=runout_lines[1],
                             label=runout_legends[1][i])
         # labels
         runout_ax.set_xlabel(r"$t / \tau_{c}$")
-        runout_ax.set_ylabel(r"$(L_t - L_0)/L_0 \ and \ H_t/L_0$")
-        # height_ax.set_ylabel(r"$H_t/L$")
-        # runout_ax.set_ylim([0, 1])
-        # height_ax.set_ylim([0, 1])
+        runout_ax.set_ylabel(r"$(L_t - L_0)/L_0$")
+        height_ax.set_ylabel(r"$H_t/L_0$")
+        runout_ax.set_xlim(xmin=0, xmax=5)
+        runout_ax.set_ylim(ymin=0)
+        height_ax.set_xlim(xmin=0, xmax=5)
+        height_ax.set_ylim(ymin=0)
         # legend
-        # runout_p_set = p1 + p2
-        # runout_p_sets.extend(runout_p_set)
-        # runout_labs = [l.get_label() for l in runout_p_sets]
-        runout_ax.legend(ncol=2, loc="best", prop={'size': 8})
+        runout_p_set = p1 + p2
+        runout_p_sets.extend(runout_p_set)
+        runout_labs = [l.get_label() for l in runout_p_sets]
+        runout_ax.legend(ncol=2, loc="lower right", prop={'size': 8})
         runout_fig.tight_layout()
         # if i == 1:
         #     runout_fig.show()
@@ -205,6 +207,8 @@ if __name__ == "__main__":
 
         energy_ax.set_xlabel(r"$t / \tau_{c} $")
         energy_ax.set_ylabel(r"Normalized energy")
+        energy_ax.set_xlim(xmin=0, xmax=5)
+        energy_ax.set_ylim(ymin=0)
         energy_p_set = p3 + p4 + p5
         energy_p_sets.extend(energy_p_set)
         energy_ax.legend(ncol=2, loc="best", prop={'size': 8})

@@ -8,7 +8,7 @@ export DATASET_NAME="sand-small-r300-400step_serial"
 for STEPS in 15270000
 do
 #export STEPS=15270000
-export OUTPUT_TAG="test4-2"
+export OUTPUT_TAG="test0-2"
 export TRAJECTORY_ID="0"
 
 # Change test.npz that is used to make rollout to the specified `test_{OUTPUT_TAG}.npz which you want to make rollout

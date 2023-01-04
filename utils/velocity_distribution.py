@@ -140,14 +140,14 @@ nbins = 100
 # range for bins
 first_edge, last_edge = whole_train_vel_distb['magnitude'].min(), whole_train_vel_distb['magnitude'].max()
 # timesteps to plot
-critical_timesteps = [0, 0.5, 1.0, 1.25, 1.5, 2.0, 2.5, 2.75, 3.5]
+critical_timesteps = [0, 0.5, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0]
 # get test_rollout file names to plot
 test_rollout_filenames = []
 trajectory_ID = [0]
 # figsize
-figsize_trajectory = (4, 3.5)
+figsize_trajectory = (8, 2)
 # title
-title_loc = 0.80
+title_loc = 0.85
 title_fontsize = 10
 # color bar
 colorbar = {"aspect": 30, "labelsize": 8}
@@ -204,7 +204,7 @@ for test_rollout in test_rollout_filenames:
     g = 9.81 * dt ** 2  # because, in MPM, we used dt=0.0025, and, in GNS, dt=1.0
     height = np.max(test_trajectories["mpm"][test_rollout][0][:, 1]) - np.min(test_trajectories["mpm"][test_rollout][0][:, 1])
     critical_time = np.sqrt(height / g)
-    output_critical_timesteps = [0, 0.5, 1.0, 1.25, 1.5, 2.0, 2.5, 2.75, 3.5, timesteps / critical_time]
+    output_critical_timesteps = critical_timesteps + [timesteps / critical_time]
     output_timesteps = np.around(np.array(output_critical_timesteps) * critical_time, 0)
     output_timesteps = list(output_timesteps.astype(int))
     output_timesteps[-1] = timesteps  # to comply with the last index of the list
@@ -226,10 +226,10 @@ for test_rollout in test_rollout_filenames:
 
     # for timestep in timesteps_to_plot:
     for i, timestep in enumerate(timesteps_to_plot):
-        fig_disp, axd = plt.subplot_mosaic([['mpm_disp'], ['gns_disp']],
+        fig_disp, axd = plt.subplot_mosaic([['mpm_disp', 'gns_disp']],
                                       figsize=figsize_trajectory, sharex=True, layout="constrained")
-        fig_vel, axv = plt.subplot_mosaic([['mpm_vel'], ['gns_vel']],
-                                      figsize=figsize_trajectory, sharex=True, layout="constrained")
+        fig_vel, axv = plt.subplot_mosaic([['mpm_vel', 'gns_vel']],
+                                      figsize=(6, 1.5), sharex=True, layout="constrained")
         fig_distb, ax_distb = plt.subplots(figsize=(3, 2.5), layout="constrained")
 
         # Trajectory plots
@@ -251,6 +251,7 @@ for test_rollout in test_rollout_filenames:
         axd['mpm_disp'].set_ylim(bounds[1][0], bounds[1][1])
         axd['mpm_disp'].set_title("MPM", y=title_loc, fontsize=title_fontsize)
         axd['mpm_disp'].set_aspect('equal')
+        fig_disp.tight_layout()
 
         # gns displacement
         d_gns = axd['gns_disp'].scatter(
@@ -266,6 +267,7 @@ for test_rollout in test_rollout_filenames:
         axd['gns_disp'].set_ylim(bounds[1][0], bounds[1][1])
         axd['gns_disp'].set_title("GNS", y=title_loc, fontsize=title_fontsize)
         axd['gns_disp'].set_aspect('equal')
+        fig_disp.tight_layout()
 
         # trajectory plot - velocity contour
         norm = colors.TwoSlopeNorm(vcenter=0.0005)  # TODO: `vcenter` value need to be determined
@@ -282,6 +284,7 @@ for test_rollout in test_rollout_filenames:
         axv['mpm_vel'].set_ylim(bounds[1][0], bounds[1][1])
         axv['mpm_vel'].set_title("MPM", y=title_loc, fontsize=title_fontsize)
         axv['mpm_vel'].set_aspect('equal')
+        fig_vel.tight_layout()
         # gns velocity
         v_gns = axv['gns_vel'].scatter(
             test_trajectories["gns"][test_rollout][timestep][:, 0], test_trajectories["gns"][test_rollout][timestep][:, 1],
@@ -295,9 +298,11 @@ for test_rollout in test_rollout_filenames:
         axv['gns_vel'].set_ylim(bounds[1][0], bounds[1][1])
         axv['gns_vel'].set_title("GNS", y=title_loc, fontsize=title_fontsize)
         axv['gns_vel'].set_aspect('equal')
+        fig_vel.tight_layout()
         # get color values and divide it into the equal length corresponding to the bins
         v_colors = v_gns.cmap.colors
         v_colors_bins = [v_colors[int(i)] for i in np.linspace(0, len(v_colors), percentile, endpoint=False)]
+
 
 
         # Test distribution - use the same bin start and end range with the train distribution
