@@ -21,3 +21,4 @@ export DATASET_NAME="sand-small-r300-400step_parallel"
 export WORK_DIR="../gns-data"
 
 torchrun gns/train.py --data_path="${WORK_DIR}/datasets/${DATASET_NAME}/" --model_path="${WORK_DIR}/models/${DATASET_NAME}/" --output_path="${WORK_DIR}/rollouts/${DATASET_NAME}/" --nsave_steps=10000 --ntraining_steps=5000000 --loss_save_freq 2
+stress, initial congif boundary condition
