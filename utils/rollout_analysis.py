@@ -17,10 +17,10 @@ if __name__ == "__main__":
     parser.add_argument('--output_filename', help='Output file name to save plots')
     args = parser.parse_args()
 
-    # rollout_path = "../gns-data/rollouts/sand-2d-small-r300"#args.rollout_path
-    # rollout_filename = "rollout_test0-2_0_step2000000"#args.rollout_filename
-    # output_percentile = 100#args.output_percentile
-    # output_filename = "step20000000_test0-2_0"#args.output_filename
+    # rollout_path = "../gns-data/rollouts/sand-small-r300-400step_serial"
+    # rollout_filename = "rollout_test6-1_0_step15270000"
+    # output_percentile = 100
+    # output_filename = "step15270000_test6-1_0"
     # mass = 1
     rollout_path = args.rollout_path
     rollout_filename = args.rollout_filename
@@ -62,17 +62,17 @@ if __name__ == "__main__":
 
     # %% Prepare plots
     # runout and height
-    runout_fig, runout_ax = plt.subplots(figsize=(5, 3.5))
-    # height_ax = runout_ax.twinx()  # make the figure have two y-axis
+    runout_fig, runout_ax = plt.subplots(figsize=(4.5, 3.2))
+    height_ax = runout_ax.twinx()  # make the figure have two y-axis
     runout_legends = (
         ["MPM Runout", "GNS Runout"],
         ["MPM Height", "GNS Height"])
     runout_lines = ["solid", "dashed"]
     runout_colors = ["silver", "black"]
-    # runout_p_sets = []
+    runout_p_sets = []
 
     # energy
-    energy_fig, energy_ax = plt.subplots(figsize=(5, 3.5))
+    energy_fig, energy_ax = plt.subplots(figsize=(4.5, 3.2))
     energy_legends = (
         ["MPM $E_p/E_0$", "GNS $E_p/E_0$"],
         ["MPM $E_k/E_0$", "GNS $E_k/E_0$"],
@@ -163,27 +163,34 @@ if __name__ == "__main__":
         normalized_Ep = potentialE / E0
         normalized_Ed = dissipationE / E0
 
+        if i == 0:
+            print(f"mpm: {normalized_L_t[-1]}")
+        if i == 1:
+            print(f"gns: {normalized_L_t[-1]}")
+
         ##  Plot
         # plot for runout
         p1 = runout_ax.plot(normalized_time, normalized_L_t,
                             color=runout_colors[i],
                             linestyle=runout_lines[0],
                             label=runout_legends[0][i])
-        p2 = runout_ax.plot(normalized_time, normalized_H_t,
+        p2 = height_ax.plot(normalized_time, normalized_H_t,
                             color=runout_colors[i],
                             linestyle=runout_lines[1],
                             label=runout_legends[1][i])
         # labels
         runout_ax.set_xlabel(r"$t / \tau_{c}$")
-        runout_ax.set_ylabel(r"$(L_t - L_0)/L_0 \ and \ H_t/L_0$")
-        # height_ax.set_ylabel(r"$H_t/L$")
-        # runout_ax.set_ylim([0, 1])
-        # height_ax.set_ylim([0, 1])
+        runout_ax.set_ylabel(r"$(L_t - L_0)/L_0$")
+        height_ax.set_ylabel(r"$H_t/L_0$")
+        runout_ax.set_xlim(xmin=0, xmax=5)
+        runout_ax.set_ylim(ymin=0, ymax=5)
+        height_ax.set_xlim(xmin=0, xmax=5)
+        height_ax.set_ylim(ymin=0, ymax=5)
         # legend
-        # runout_p_set = p1 + p2
-        # runout_p_sets.extend(runout_p_set)
-        # runout_labs = [l.get_label() for l in runout_p_sets]
-        runout_ax.legend(ncol=2, loc="best", prop={'size': 8})
+        runout_p_set = p1 + p2
+        runout_p_sets.extend(runout_p_set)
+        runout_labs = [l.get_label() for l in runout_p_sets]
+        runout_ax.legend(ncol=2, loc="lower right", prop={'size': 8})
         runout_fig.tight_layout()
         # if i == 1:
         #     runout_fig.show()
@@ -205,6 +212,8 @@ if __name__ == "__main__":
 
         energy_ax.set_xlabel(r"$t / \tau_{c} $")
         energy_ax.set_ylabel(r"Normalized energy")
+        energy_ax.set_xlim(xmin=0, xmax=5)
+        energy_ax.set_ylim(ymin=0)
         energy_p_set = p3 + p4 + p5
         energy_p_sets.extend(energy_p_set)
         energy_ax.legend(ncol=2, loc="best", prop={'size': 8})
@@ -235,8 +244,8 @@ if __name__ == "__main__":
             # trajectory_axs[i, j].set_ylabel("y")
             trajectory_axs[i, j].set_aspect('equal')
 
-    # trajectory_fig.colorbar(p, ax=trajectory_axs[:, 3], shrink=0.6)
-    # runout_fig.show()
+    trajectory_fig.colorbar(p, ax=trajectory_axs[:, 3], shrink=0.6)
+    runout_fig.show()
     runout_fig.savefig(f"{rollout_path}/runout_{output_filename}-{int(output_percentile)}percentile.png")
     # energy_fig.show()
     energy_fig.savefig(f"{rollout_path}/energy_{output_filename}.png")
