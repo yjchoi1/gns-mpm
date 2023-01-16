@@ -17,10 +17,10 @@ if __name__ == "__main__":
     parser.add_argument('--output_filename', help='Output file name to save plots')
     args = parser.parse_args()
 
-    # rollout_path = "../gns-data/rollouts/sand-2d-small-r300"#args.rollout_path
-    # rollout_filename = "rollout_test0-2_0_step2000000"#args.rollout_filename
-    # output_percentile = 100#args.output_percentile
-    # output_filename = "step20000000_test0-2_0"#args.output_filename
+    # rollout_path = "../gns-data/rollouts/sand-small-r300-400step_serial"
+    # rollout_filename = "rollout_test6-1_0_step15270000"
+    # output_percentile = 100
+    # output_filename = "step15270000_test6-1_0"
     # mass = 1
     rollout_path = args.rollout_path
     rollout_filename = args.rollout_filename
@@ -163,6 +163,11 @@ if __name__ == "__main__":
         normalized_Ep = potentialE / E0
         normalized_Ed = dissipationE / E0
 
+        if i == 0:
+            print(f"mpm: {normalized_L_t[-1]}")
+        if i == 1:
+            print(f"gns: {normalized_L_t[-1]}")
+
         ##  Plot
         # plot for runout
         p1 = runout_ax.plot(normalized_time, normalized_L_t,
@@ -178,9 +183,9 @@ if __name__ == "__main__":
         runout_ax.set_ylabel(r"$(L_t - L_0)/L_0$")
         height_ax.set_ylabel(r"$H_t/L_0$")
         runout_ax.set_xlim(xmin=0, xmax=5)
-        runout_ax.set_ylim(ymin=0)
+        runout_ax.set_ylim(ymin=0, ymax=5)
         height_ax.set_xlim(xmin=0, xmax=5)
-        height_ax.set_ylim(ymin=0)
+        height_ax.set_ylim(ymin=0, ymax=5)
         # legend
         runout_p_set = p1 + p2
         runout_p_sets.extend(runout_p_set)
@@ -239,8 +244,8 @@ if __name__ == "__main__":
             # trajectory_axs[i, j].set_ylabel("y")
             trajectory_axs[i, j].set_aspect('equal')
 
-    # trajectory_fig.colorbar(p, ax=trajectory_axs[:, 3], shrink=0.6)
-    # runout_fig.show()
+    trajectory_fig.colorbar(p, ax=trajectory_axs[:, 3], shrink=0.6)
+    runout_fig.show()
     runout_fig.savefig(f"{rollout_path}/runout_{output_filename}-{int(output_percentile)}percentile.png")
     # energy_fig.show()
     energy_fig.savefig(f"{rollout_path}/energy_{output_filename}.png")

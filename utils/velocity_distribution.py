@@ -9,7 +9,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats
 
 
-test_rollout_tags = ["test0-2", "test3", "test4", "test5-1", "test4", "test4-2"]
+test_rollout_tags = ["test2-1"]
 data_path = "/work2/08264/baagee/frontera/gns-mpm/gns-data/rollouts/sand-small-r300-400step_serial/"
 training_steps = 15270000
 train_trajectory_ID = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]

@@ -9,15 +9,13 @@ module load gcc/9.1.0
 module load python3/3.8.2
 export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
 
-python3 -m virtualenv venv-frontera
-source venv-frontera/bin/activate
+python3 -m virtualenv venv-frontera-gpu
+source venv-frontera-gpu/bin/activate
 
 which python
 python -m pip install --upgrade pip
-pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
-pip install torch-scatter -f https://data.pyg.org/whl/torch-1.12+11.3.html
-pip install torch-sparse -f https://data.pyg.org/whl/torch-1.12+11.3.html
-pip install torch-geometric
+pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install pyg-lib torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.12.1+cu113.html
 python -m pip install -r requirements.txt
 
 
@@ -28,13 +26,13 @@ echo 'which python -> venv'
 which python
 
 echo 'test_pytorch.py -> random tensor'
-python test/test_pytorch.py 
+python gns/test/test_pytorch.py 
 
 echo 'test_pytorch_cuda_gpu.py -> True if GPU'
-python test/test_pytorch_cuda_gpu.py
+python gns/test/test_pytorch_cuda_gpu.py
 
 echo 'test_torch_geometric.py -> no retun if import sucessful'
-python test/test_torch_geometric.py
+python gns/test/test_torch_geometric.py
 
 # Clean up
 # --------

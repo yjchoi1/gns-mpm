@@ -6,6 +6,8 @@ import torch
 import pickle
 import glob
 import re
+import sys
+import time
 
 import tree
 
@@ -18,18 +20,45 @@ from gns import noise_utils
 from gns import reading_utils
 from gns import data_loader
 
+
+#
+# flags.DEFINE_enum(
+#     'mode', 'train', ['train', 'valid', 'rollout'],
+#     help='Train model, validation or rollout evaluation.')
+# flags.DEFINE_integer('batch_size', 2, help='The batch size.')
+# flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
+# flags.DEFINE_string('data_path', None, help='The dataset directory.')
+# flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoints of the model.'))
+# flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
+# flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+# flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+# flags.DEFINE_string('rollout_tag', None, help='Tag for saving the rollout, e.g., rollout_{tag}.pkl')
+# flags.DEFINE_integer('rollout_step', None, help='The number of training steps for rollout. Should be the same as the steps used in model_file')
+#
+# flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
+# flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
+# flags.DEFINE_integer('loss_save_freq', None, help='Frequency to save loss value')
+#
+# # Learning rate parameters
+# flags.DEFINE_float('lr_init', 1e-4, help='Initial learning rate.')
+# flags.DEFINE_float('lr_decay', 0.1, help='Learning rate decay.')
+# flags.DEFINE_integer('lr_decay_steps', int(5e6), help='Learning rate decay steps.')
+#
+# flags.DEFINE_integer("cuda_device_number", None, help="CUDA device (zero indexed), default is None so default CUDA device will be used.")
+
+##### For debug
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
-flags.DEFINE_string('data_path', None, help='The dataset directory.')
-flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('rollout_tag', None, help='Tag for saving the rollout, e.g., rollout_{tag}.pkl')
-flags.DEFINE_integer('rollout_step', None, help='The number of training steps for rollout. Should be the same as the steps used in model_file')
+flags.DEFINE_string('data_path', '../gns-data/datasets/sand-small-r300-400step_serial/', help='The dataset directory.')
+flags.DEFINE_string('model_path', '../gns-data/models/sand-small-r300-400step_serial/', help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', '../gns-data/rollouts/sand-small-r300-400step_serial/', help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', 'model-15270000.pt', help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', 'train_state-15270000.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('rollout_tag', 'cputest0-2', help='Tag for saving the rollout, e.g., rollout_{tag}.pkl')
+flags.DEFINE_integer('rollout_step', '0', help='The number of training steps for rollout. Should be the same as the steps used in model_file')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
@@ -41,6 +70,7 @@ flags.DEFINE_float('lr_decay', 0.1, help='Learning rate decay.')
 flags.DEFINE_integer('lr_decay_steps', int(5e6), help='Learning rate decay steps.')
 
 flags.DEFINE_integer("cuda_device_number", None, help="CUDA device (zero indexed), default is None so default CUDA device will be used.")
+##########
 
 FLAGS = flags.FLAGS
 
@@ -71,6 +101,8 @@ def rollout(
   predictions = []
 
   for step in range(nsteps):
+    print(step)
+    start = time.time()
     # Get next position with shape (nnodes, dim)
     next_position = simulator.predict_positions(
         current_positions,
@@ -85,6 +117,8 @@ def rollout(
     next_position = torch.where(
         kinematic_mask, next_position_ground_truth, next_position)
     predictions.append(next_position)
+    end = time.time()
+    print(end-start)
 
     # Shift `current_positions`, removing the oldest position in the sequence
     # and appending the next position at the end.

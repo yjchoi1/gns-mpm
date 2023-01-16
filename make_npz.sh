@@ -10,7 +10,7 @@ set -e
 
 # multiple
 #for ((DATA_TAG=0; DATA_TAG<60; DATA_TAG+=1))
-for DATA_TAG in "8"
+for DATA_TAG in "5-2"
   do
     # workdir
     export MPM_DIR="./mpm"
