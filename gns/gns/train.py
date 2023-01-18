@@ -101,8 +101,8 @@ def rollout(
   predictions = []
 
   for step in range(nsteps):
-    print(step)
-    start = time.time()
+    # print(step)
+    # start = time.time()
     # Get next position with shape (nnodes, dim)
     next_position = simulator.predict_positions(
         current_positions,
@@ -117,8 +117,8 @@ def rollout(
     next_position = torch.where(
         kinematic_mask, next_position_ground_truth, next_position)
     predictions.append(next_position)
-    end = time.time()
-    print(end-start)
+    # end = time.time()
+    # print(end-start)
 
     # Shift `current_positions`, removing the oldest position in the sequence
     # and appending the next position at the end.
