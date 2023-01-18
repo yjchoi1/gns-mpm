@@ -45,6 +45,7 @@ flags.DEFINE_string("output_tag", None, help="Tag of the output rollout animatio
 FLAGS = flags.FLAGS
 
 TYPE_TO_COLOR = {
+    1: "red",  # droplet center
     3: "black",  # Boundary particles.
     0: "green",  # Rigid solids.
     7: "magenta",  # Goop.
