@@ -32,8 +32,7 @@ from gns import data_loader
 # flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
 # flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 # flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-# flags.DEFINE_string('rollout_tag', None, help='Tag for saving the rollout, e.g., rollout_{tag}.pkl')
-# flags.DEFINE_integer('rollout_step', None, help='The number of training steps for rollout. Should be the same as the steps used in model_file')
+# flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 #
 # flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 # flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
@@ -57,8 +56,7 @@ flags.DEFINE_string('model_path', '../gns-data/models/sand-small-r300-400step_se
 flags.DEFINE_string('output_path', '../gns-data/rollouts/sand-small-r300-400step_serial/', help='The path for saving outputs (e.g. rollouts).')
 flags.DEFINE_string('model_file', 'model-15270000.pt', help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('train_state_file', 'train_state-15270000.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('rollout_tag', 'cputest0-2', help='Tag for saving the rollout, e.g., rollout_{tag}.pkl')
-flags.DEFINE_integer('rollout_step', '0', help='The number of training steps for rollout. Should be the same as the steps used in model_file')
+flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
@@ -191,7 +189,7 @@ def predict(
       if FLAGS.mode == 'rollout':
         example_rollout['metadata'] = metadata
         example_rollout['loss'] = loss.mean()
-        filename = f'rollout_{FLAGS.rollout_tag}_{example_i}_step{FLAGS.rollout_step}.pkl'
+        filename = f'{FLAGS.rollout_filename}.pkl'
         filename = os.path.join(FLAGS.output_path, filename)
         with open(filename, 'wb') as f:
           pickle.dump(example_rollout, f)

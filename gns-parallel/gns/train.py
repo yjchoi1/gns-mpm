@@ -30,8 +30,7 @@ flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoi
 flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
 flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('rollout_tag', None, help='Tag for saving the rollout, e.g., rollout_{tag}.pkl')
-flags.DEFINE_integer('rollout_step', None, help='The number of training steps for rollout. Should be the same as the steps used in model_file')
+flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
@@ -157,7 +156,7 @@ def predict(device: str, FLAGS, flags, world_size):
       if FLAGS.mode == 'rollout':
         example_rollout['metadata'] = metadata
         example_rollout['loss'] = loss.mean()
-        filename = f'rollout_{FLAGS.rollout_tag}_{example_i}_step{FLAGS.rollout_step}.pkl'
+        filename = f'{FLAGS.rollout_filename}.pkl'
         filename = os.path.join(FLAGS.output_path, filename)
         with open(filename, 'wb') as f:
           pickle.dump(example_rollout, f)
