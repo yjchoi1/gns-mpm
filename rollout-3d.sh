@@ -3,9 +3,9 @@
 set -e
 
 # workdir
-export DATASET_NAME="3dsand-r010"
+export DATASET_NAME="3dsand-rsmall"
 #for ((STEPS=10000000; STEPS<14000000; STEPS+=1000000))
-for STEPS in 6900000
+for STEPS in 4130000
 do
 #export STEPS=15270000
 export OUTPUT_TAG="test0"
@@ -33,7 +33,7 @@ python3 -m gns.train \
 # Render rollout
 export WORK_DIR="../gns-data"
 python3 ../utils/render_rollout.py \
---output_mode="both" \
+--output_mode="gif" \
 --rollout_dir="${WORK_DIR}/rollouts/${DATASET_NAME}/" \
 --rollout_name="rollout_${OUTPUT_TAG}_${TRAJECTORY_ID}_step${STEPS}"
 
