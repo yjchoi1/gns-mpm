@@ -18,3 +18,4 @@ gns-data/
 *.svg
 ./gns_backup
 ./venv*
+*.sh
