@@ -2,20 +2,20 @@ import numpy as np
 import json
 
 # Inputs
-bounds = [[-1.2418140152084631, 46.841814015208456],
-          [-5.16455663821927, 9.321478576384568]]
-sequence_length = int(251)
-default_connectivity_radius = 10.0
+bounds = [[0.0, 1.025],
+          [0.0, 1.025]]
+sequence_length = int(320)
+default_connectivity_radius = 0.02
 dim = int(2)
-dt_mpm = 0.01  # 0.0025
-mpm_cell_size = None  # [0.0125, 0.0125]
-nparticles_per_cell = None  # int(16)
-dt_gns = 0.01  # 1.0 is default
+dt_mpm = 0.0025  # 0.0025
+mpm_cell_size = 0.05  # [0.0125, 0.0125]
+nparticles_per_cell = int(16)  # int(16)
+dt_gns = 1.0  # 1.0 is default
 
-mpm_dir = "/work2/08264/baagee/frontera/gns-mpm/gns-data/datasets/droplet4"  # "./mpm"
-data_case = "simulation_trajectory_"  # "mpm-9k-train"
+mpm_dir = "/work2/08264/baagee/frontera/gns-mpm/mpm"  # "./mpm"
+data_case = "sand2d-"  # "mpm-9k-train"
 # data_tags = [str(i) for i in np.arange(0, 24)] + [str(25), str(26)]
-data_tags = range(1, 21)
+data_tags = ["m0-0", "m0-1", "m0-2", "m1-0", "m1-1", "m1-2"]
 save_name = "simulation_trajectory_merged"
 
 
@@ -36,7 +36,7 @@ data_names = []
 for id in data_tags:
     data_name = f"{data_case}{id}"
     data_names.append(data_name)
-    npz_path = f"{mpm_dir}/{data_name}.npz"  # f"{mpm_dir}/{data_name}/{data_name}.npz"
+    npz_path = f"{mpm_dir}/{data_name}/{data_name}.npz"  # f"{mpm_dir}/{data_name}/{data_name}.npz"
     data = np.load(npz_path, allow_pickle=True)
     for simulation_id, trajectory in data.items():
         trajectories[f"simulation_trajectory_{id}"] = (trajectory)
