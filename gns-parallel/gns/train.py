@@ -21,15 +21,15 @@ from gns import data_loader
 from gns import distribute
 
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
-flags.DEFINE_string('data_path', None, help='The dataset directory.')
-flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('data_path', "../gns-data/datasets/droplet4_material_type/", help='The dataset directory.')
+flags.DEFINE_string('model_path', "../gns-data/models/droplet4_material_type/", help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', "../gns-data/rollouts/droplet4_material_type/", help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', "model-5000000.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', 'train_state-5000000.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
@@ -112,7 +112,7 @@ def predict(device: str, FLAGS, flags, world_size):
   """Predict rollouts.
 
   Args:
-    simulator: Trained simulator if not will undergo training.
+    simulator: Trained simulator if not raise error.
 
   """
   metadata = reading_utils.read_metadata(FLAGS.data_path)
@@ -122,7 +122,7 @@ def predict(device: str, FLAGS, flags, world_size):
   if os.path.exists(FLAGS.model_path + FLAGS.model_file):
     simulator.load(FLAGS.model_path + FLAGS.model_file)
   else:
-    train(simulator, flags, world_size)
+    raise Exception(f"Model does not exist at {FLAGS.model_path + FLAGS.model_file}")
   
   simulator.to(device)
   simulator.eval()
