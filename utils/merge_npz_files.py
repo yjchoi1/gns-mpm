@@ -11,8 +11,9 @@ dt_mpm = 0.0025  # 0.0025
 mpm_cell_size = 0.05  # [0.0125, 0.0125]
 nparticles_per_cell = int(16)  # int(16)
 dt_gns = 1.0  # 1.0 is default
+material_feature_len = 1.0
 
-mpm_dir = "/work2/08264/baagee/frontera/gns-mpm/mpm"  # "./mpm"
+mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm"  # "./mpm"
 data_case = "sand2d-"  # "mpm-9k-train"
 # data_tags = [str(i) for i in np.arange(0, 24)] + [str(25), str(26)]
 data_tags = ["m0-0", "m0-1", "m0-2", "m1-0", "m1-1", "m1-2"]
@@ -113,6 +114,7 @@ if dim == 2:
         "sequence_length": sequence_length,
         "default_connectivity_radius": default_connectivity_radius,
         "boundary_augment": 1.0,
+        "material_feature_len": material_feature_len,
         "dim": dim,
         "dt": dt_mpm,
         "vel_mean": [statistics["mean_velocity_x"], statistics["mean_velocity_y"]],
@@ -129,6 +131,7 @@ if dim == 3:
         "sequence_length": sequence_length,
         "default_connectivity_radius": default_connectivity_radius,
         "boundary_augment": 1.0,
+        "material_feature_len": material_feature_len,
         "dim": dim,
         "dt": dt_mpm,
         "vel_mean": [statistics["mean_velocity_x"], statistics["mean_velocity_y"], statistics["mean_velocity_z"]],

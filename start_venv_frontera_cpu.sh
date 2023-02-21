@@ -12,7 +12,7 @@ module load gcc/9.1.0
 module load python3/3.8.2
 export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
 
-source venv-frontera-cpu/bin/activate
+source ../gns-mpm-data/venv-frontera-cpu/bin/activate
 
 # test env
 # --------
