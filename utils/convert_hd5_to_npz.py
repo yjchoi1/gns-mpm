@@ -113,13 +113,13 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, dt=1.0):
             for material in mpm_input["materials"]:
                 if material["id"] == material_id:
                     material_for_id = material
-            normalized_friction = material_for_id["friction"] / 70
+            normalized_friction = np.tan(material_for_id["friction"]*np.pi/180)
 
             trajectories[str(directory)] = (
                 positions,
                 np.full(positions.shape[1], 6, dtype=int),
                 np.full(positions.shape[1], normalized_friction, dtype=float))
-
+            a = 3
         else:
             trajectories[str(directory)] = (positions, np.full(positions.shape[1], 6, dtype=int))
 
@@ -135,18 +135,15 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, dt=1.0):
 
 def main(_):
 
-    ndim = 2
+    ndim = 3
     dt = 1.0
-    sim_dir = "../mpm/"
+    sim_dir = "../../gns-mpm-data/mpm/sand3dtest/"
     sim_names = [
-        "sand2d-m0-0",
-        "sand2d-m0-1",
-        "sand2d-m0-2",
-        "sand2d-m1-0",
-        "sand2d-m1-1",
-        "sand2d-m1-2"
+        "sand3dtest0",
+        "sand3dtest1",
+        "sand3dtest2",
     ]
-    uuid = "/results/2dsand"
+    uuid = "/results/sand3dtest"
 
     for i, sim in enumerate(sim_names):
         convert_hd5_to_npz(path=sim_dir + sim,

@@ -2,22 +2,23 @@ import numpy as np
 import json
 
 # Inputs
-bounds = [[0.0, 1.025],
-          [0.0, 1.025]]
-sequence_length = int(320)
-default_connectivity_radius = 0.02
-dim = int(2)
+mpm_cell_size = 1.0/12  # [0.0125, 0.0125]
+bounds = [[0.0-mpm_cell_size/4, 1.025+mpm_cell_size/4],
+          [0.0-mpm_cell_size/4, 1.0+mpm_cell_size/4],
+          [0.0-mpm_cell_size/4, 1.0+mpm_cell_size/4]]
+sequence_length = int(380)
+default_connectivity_radius = 1.0/12
+dim = int(3)
 dt_mpm = 0.0025  # 0.0025
-mpm_cell_size = 0.05  # [0.0125, 0.0125]
 nparticles_per_cell = int(16)  # int(16)
 dt_gns = 1.0  # 1.0 is default
-material_feature_len = 1.0
+material_feature_len = int(1)
 
-mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm"  # "./mpm"
-data_case = "sand2d-"  # "mpm-9k-train"
+mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3dtest"  # "./mpm"
+data_case = "sand3dtest"  # "mpm-9k-train"
 # data_tags = [str(i) for i in np.arange(0, 24)] + [str(25), str(26)]
-data_tags = ["m0-0", "m0-1", "m0-2", "m1-0", "m1-1", "m1-2"]
-save_name = "simulation_trajectory_merged"
+data_tags = [0, 1, 2]
+save_name = "sand3dtestmerged"
 
 
 trajectories = {}
