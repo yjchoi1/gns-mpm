@@ -73,6 +73,7 @@ if __name__ == "__main__":
 
     # energy
     energy_fig, energy_ax = plt.subplots(figsize=(4.5, 3.2))
+    energy_ax2 = energy_ax.twinx()
     energy_legends = (
         ["MPM $E_p/E_0$", "GNS $E_p/E_0$"],
         ["MPM $E_k/E_0$", "GNS $E_k/E_0$"],
@@ -183,9 +184,9 @@ if __name__ == "__main__":
         runout_ax.set_ylabel(r"$(L_t - L_0)/L_0$")
         height_ax.set_ylabel(r"$H_t/L_0$")
         runout_ax.set_xlim(xmin=0, xmax=5)
-        runout_ax.set_ylim(ymin=0, ymax=5)
+        runout_ax.set_ylim(ymin=0, ymax=1.5)
         height_ax.set_xlim(xmin=0, xmax=5)
-        height_ax.set_ylim(ymin=0, ymax=5)
+        height_ax.set_ylim(ymin=0, ymax=1.5)
         # legend
         runout_p_set = p1 + p2
         runout_p_sets.extend(runout_p_set)
@@ -201,22 +202,31 @@ if __name__ == "__main__":
                             color=energy_colors[i],
                             linestyle=energy_lines[0],
                             label=energy_legends[0][i])
-        p4 = energy_ax.plot(normalized_time, normalized_Ek,
+        p4 = energy_ax2.plot(normalized_time, normalized_Ek,
                                   color=energy_colors[i],
                                   linestyle=energy_lines[1],
                                   label=energy_legends[1][i])
-        p5 = energy_ax.plot(normalized_time, normalized_Ed,
+        p5 = energy_ax2.plot(normalized_time, normalized_Ed,
                                   color=energy_colors[i],
                                   linestyle=energy_lines[2],
                                   label=energy_legends[2][i])
 
         energy_ax.set_xlabel(r"$t / \tau_{c} $")
-        energy_ax.set_ylabel(r"Normalized energy")
+        energy_ax.set_ylabel(r"$E_p/E_0$")
         energy_ax.set_xlim(xmin=0, xmax=5)
         energy_ax.set_ylim(ymin=0)
         energy_p_set = p3 + p4 + p5
         energy_p_sets.extend(energy_p_set)
-        energy_ax.legend(ncol=2, loc="best", prop={'size': 8})
+        energy_ax2.set_ylabel(r"$E_k/E_0$ and $E_d/E_0$")
+        energy_ax2.set_ylim(ymin=0, ymax=0.275)
+        # energy_ax2.set_ylim(ymin=0, ymax=0.3)
+        lines, labels = energy_ax.get_legend_handles_labels()
+        lines2, labels2 = energy_ax2.get_legend_handles_labels()
+        energy_ax2.legend(lines + lines2, labels + labels2,
+                          ncol=2, loc=7, prop={'size': 8})
+        # energy_ax.legend(ncol=2, loc="best", prop={'size': 8})
+        # energy_ax.legend(ncol=2, loc="best", prop={'size': 8})
+        # energy_ax2.legend(ncol=2, loc="best", prop={'size': 8})
         energy_fig.tight_layout()
 
         # Runout with timesteps

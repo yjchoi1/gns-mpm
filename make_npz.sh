@@ -8,22 +8,22 @@ set -e
 #python3 make_npz/convert_hdf5_to_npz.py --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/2d-sand-column" --dt=1.0 \
 # --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}.npz"
 
-dim=3
+dim=2
 
 # multiple
 #for ((DATA_TAG=0; DATA_TAG<60; DATA_TAG+=1))
-for DATA_TAG in 0
+for DATA_TAG in 4-3
   do
     # workdir
-    export MPM_DIR="./mpm"
-    export DATA_CASE="3dsand_test"
+    export MPM_DIR="../gns-mpm-data/mpm"
+    export DATA_CASE="mpm-small-test"
     export DATA_TAG=${DATA_TAG}
 
     # 2d file path
     if [ $dim == 2 ]
     then
       python3 make_npz/convert_hdf5_to_npz.py \
-      --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/2d-sand-column/" \
+      --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/small-test/" \
       --dt=1.0 \
       --ndim=2 \
       --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}.npz"

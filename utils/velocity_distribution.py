@@ -9,10 +9,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats
 
 
-test_rollout_tags = ["test2-1"]
-data_path = "/work2/08264/baagee/frontera/gns-mpm/gns-data/rollouts/sand-small-r300-400step_serial/"
+test_rollout_tags = ["test4-3"]
+data_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand-small-r300-400step_serial/"
 training_steps = 15270000
-train_trajectory_ID = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+train_trajectory_ID = [0]
 
 def get_simulations(data_path, rollout_tags, trajectory_ID, training_steps=None):
     # import rollout.pkl
@@ -267,7 +267,7 @@ for test_rollout in test_rollout_filenames:
         axd['gns_disp'].set_ylim(bounds[1][0], bounds[1][1])
         axd['gns_disp'].set_title("GNS", y=title_loc, fontsize=title_fontsize)
         axd['gns_disp'].set_aspect('equal')
-        fig_disp.tight_layout()
+        plt.tight_layout()
 
         # trajectory plot - velocity contour
         norm = colors.TwoSlopeNorm(vcenter=0.0005)  # TODO: `vcenter` value need to be determined
@@ -284,7 +284,7 @@ for test_rollout in test_rollout_filenames:
         axv['mpm_vel'].set_ylim(bounds[1][0], bounds[1][1])
         axv['mpm_vel'].set_title("MPM", y=title_loc, fontsize=title_fontsize)
         axv['mpm_vel'].set_aspect('equal')
-        fig_vel.tight_layout()
+        plt.tight_layout()
         # gns velocity
         v_gns = axv['gns_vel'].scatter(
             test_trajectories["gns"][test_rollout][timestep][:, 0], test_trajectories["gns"][test_rollout][timestep][:, 1],
@@ -298,7 +298,7 @@ for test_rollout in test_rollout_filenames:
         axv['gns_vel'].set_ylim(bounds[1][0], bounds[1][1])
         axv['gns_vel'].set_title("GNS", y=title_loc, fontsize=title_fontsize)
         axv['gns_vel'].set_aspect('equal')
-        fig_vel.tight_layout()
+        plt.tight_layout()
         # get color values and divide it into the equal length corresponding to the bins
         v_colors = v_gns.cmap.colors
         v_colors_bins = [v_colors[int(i)] for i in np.linspace(0, len(v_colors), percentile, endpoint=False)]
