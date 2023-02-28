@@ -106,7 +106,7 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, dt=1.0):
         if os.path.exists(f"{metadata_path}/metadata.json"):
             a = 3
             # read material_id and associated material properties in mpm_input.json
-            # TODO: currently, it only supports single material type simulation
+            # TODO: currently, it only supports single material type in one simulation
             material_id = metadata["particle"]["group0"]["material_id"]
             f = open(f"{metadata_path}/mpm_input.json")
             mpm_input = json.load(f)
@@ -137,13 +137,12 @@ def main(_):
 
     ndim = 3
     dt = 1.0
-    sim_dir = "../../gns-mpm-data/mpm/sand3dtest/"
+    sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_friction_prelim_analysis/"
     sim_names = [
-        "sand3dtest0",
-        "sand3dtest1",
-        "sand3dtest2",
+        "sand2dtestR_6k",
+        "sand2dtestR_10k"
     ]
-    uuid = "/results/sand3dtest"
+    uuid = "/results/small-test"
 
     for i, sim in enumerate(sim_names):
         convert_hd5_to_npz(path=sim_dir + sim,

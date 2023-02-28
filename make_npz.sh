@@ -8,35 +8,20 @@ set -e
 #python3 make_npz/convert_hdf5_to_npz.py --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/2d-sand-column" --dt=1.0 \
 # --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}.npz"
 
-dim=3
+dim=2
 
 # multiple
 #for ((DATA_TAG=0; DATA_TAG<60; DATA_TAG+=1))
-for DATA_TAG in 0
-  do
-    # workdir
-    export MPM_DIR="./mpm"
-    export DATA_CASE="3dsand_test"
-    export DATA_TAG=${DATA_TAG}
+for DATA_TAG in "_6k"
+do
+  # workdir
+  export MPM_DIR="/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_friction_prelim_analysis/"
+  export DATA_CASE="sand2dtestR"
+  export DATA_TAG=${DATA_TAG}
 
-    # 2d file path
-    if [ $dim == 2 ]
-    then
-      python3 make_npz/convert_hdf5_to_npz.py \
-      --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/2d-sand-column/" \
-      --dt=1.0 \
-      --ndim=2 \
-      --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}.npz"
-  #    python3 utils/animation_from_h5.py --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/2d-sand-column" \
-  #     --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results" \
-  #     --xboundary 0.0 1.0 --yboundary 0.0 1.0
-
-    # 3d file path
-    else
-      python3 make_npz/convert_hdf5_to_npz.py \
-      --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}/results/${DATA_CASE}${DATA_TAG}/" \
-      --dt=1.0 \
-      --ndim=3 \
-      --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}.npz"
-    fi
-  done
+  python3 make_npz/convert_hdf5_to_npz.py \
+  --path="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/results/small-test/" \
+  --dt=1.0 \
+  --ndim=${dim} \
+  --output="${MPM_DIR}/${DATA_CASE}${DATA_TAG}/${DATA_CASE}${DATA_TAG}.npz"
+done
