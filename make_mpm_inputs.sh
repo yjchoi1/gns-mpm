@@ -1,10 +1,10 @@
-MPM_DIR="../gns-mpm-data/mpm/mpm-small-test4-3"
+MPM_DIR="../gns-mpm-data/mpm/mpm-small-test5-5"
 cd ${MPM_DIR}
 
 python3 ../../../gns-mpm/mpm_input_gen/make_mpm_input.py \
---x_bounds 0.0 0.75 --y_bounds 0.0 0.75 \
+--x_bounds 0.0 1.0 --y_bounds 0.0 1.0 \
 --dx 0.025 --dy 0.025 \
---x_range 0.018 0.268 --y_range 0.0 0.2 \
+--x_range 0.020 0.14 --y_range 0.0 3.6 \
 --randomness 0.8 \
 --density 1800.0 \
 #--k0 0.5

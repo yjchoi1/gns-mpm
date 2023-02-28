@@ -1,11 +1,11 @@
 set -e
 
-for i in 0
+for i in 15 35 45
 do
 python3 animation_from_h5.py \
---path "/work2/08264/baagee/frontera/gns-mpm-data/mpm/mpm-small-test4-3/results/small-test/" \
---output "/work2/08264/baagee/frontera/gns-mpm-data/mpm/mpm-small-test4-3/results" \
---ndim 2 --xboundary 0 0.75 --yboundary 0 0.75
+--path "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_friction/friction${i}/results/sand2d_friction" \
+--output "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_friction/friction${i}/" \
+--ndim 2 --xboundary 0 1.0 --yboundary 0 1.0
 done
 #python3 animation_from_h5.py \
 #--path "../mpm/3dsand_train${i}/3dsand_train${i}/results/3dsand_train${i}/" \
