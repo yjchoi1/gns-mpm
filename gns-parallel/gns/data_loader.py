@@ -15,14 +15,10 @@ class SamplesDataset(torch.utils.data.Dataset):
         # length of each trajectory in the dataset
         # excluding the input_length_sequence
         # may (and likely is) variable between data
-        self._dimension = self._data[0][0].shape[-1]  # yc: 2
-        self._input_length_sequence = input_length_sequence  # yc: 6
-        self._material_property_as_feature = True if len(self._data[0]) >= 3 else False
-        if self._material_property_as_feature:  # if raw data includes material_property
-            self._data_lengths = [x.shape[0] - self._input_length_sequence for x, _, _ in self._data]
-        else:
-            self._data_lengths = [x.shape[0] - self._input_length_sequence for x, _, in self._data]
-        self._length = sum(self._data_lengths)  # (320-6) * ntrajectories
+        self._dimension = self._data[0][0].shape[-1]
+        self._input_length_sequence = input_length_sequence
+        self._data_lengths = [x.shape[0] - self._input_length_sequence for x, _ in self._data]
+        self._length = sum(self._data_lengths)
 
         # pre-compute cumulative lengths
         # to allow fast indexing in __getitem__
@@ -49,59 +45,27 @@ class SamplesDataset(torch.utils.data.Dataset):
         n_particles_per_example = positions.shape[0]
         label = self._data[trajectory_idx][0][time_idx]
 
-        if self._material_property_as_feature:  # if raw data includes material_property
-            material_property = np.full(positions.shape[0], self._data[trajectory_idx][2], dtype=float)
-            training_example = ((positions, particle_type, material_property, n_particles_per_example), label)
-        else:
-            training_example = ((positions, particle_type, n_particles_per_example), label)
-
-        return training_example
+        return ((positions, particle_type, n_particles_per_example), label)
 
 def collate_fn(data):
-
-    material_property_as_feature = True if len(data[0][0]) >= 4 else False
     position_list = []
     particle_type_list = []
-    if material_property_as_feature:
-        material_property_list = []
     n_particles_per_example_list = []
     label_list = []
 
-    if material_property_as_feature:
-        for ((positions, particle_type, material_property, n_particles_per_example), label) in data:
-            position_list.append(positions)
-            particle_type_list.append(particle_type)
-            material_property_list.append(material_property)
-            n_particles_per_example_list.append(n_particles_per_example)
-            label_list.append(label)
-    else:
-        for ((positions, particle_type, n_particles_per_example), label) in data:
-            position_list.append(positions)
-            particle_type_list.append(particle_type)
-            n_particles_per_example_list.append(n_particles_per_example)
-            label_list.append(label)
+    for ((positions, particle_type, n_particles_per_example), label) in data:
+        position_list.append(positions)
+        particle_type_list.append(particle_type)
+        n_particles_per_example_list.append(n_particles_per_example)
+        label_list.append(label)
 
-    if material_property_as_feature:
-        collated_data = (
-            (
-                torch.tensor(np.vstack(position_list)).to(torch.float32).contiguous(),
-                torch.tensor(np.concatenate(particle_type_list)).contiguous(),
-                torch.tensor(np.concatenate(material_property_list)).to(torch.float32).contiguous(),
-                torch.tensor(n_particles_per_example_list).contiguous(),
-            ),
-            torch.tensor(np.vstack(label_list)).to(torch.float32).contiguous()
+    return ((
+        torch.tensor(np.vstack(position_list)).to(torch.float32).contiguous(), 
+        torch.tensor(np.concatenate(particle_type_list)).contiguous(),
+        torch.tensor(n_particles_per_example_list).contiguous(),
+        ),
+        torch.tensor(np.vstack(label_list)).to(torch.float32).contiguous()
         )
-    else:
-        collated_data = (
-            (
-                torch.tensor(np.vstack(position_list)).to(torch.float32).contiguous(),
-                torch.tensor(np.concatenate(particle_type_list)).contiguous(),
-                torch.tensor(n_particles_per_example_list).contiguous(),
-            ),
-            torch.tensor(np.vstack(label_list)).to(torch.float32).contiguous()
-        )
-
-    return collated_data
 
 class TrajectoriesDataset(torch.utils.data.Dataset):
 
@@ -115,38 +79,20 @@ class TrajectoriesDataset(torch.utils.data.Dataset):
         self._data = [item for _, item in np.load(path, allow_pickle=True).items()]
         self._dimension = self._data[0][0].shape[-1]
         self._length = len(self._data)
-        self._material_property_as_feature = True if len(self._data[0]) >= 3 else False
 
     def __len__(self):
         return self._length
 
     def __getitem__(self, idx):
-        if self._material_property_as_feature:
-            positions, _particle_type, _material_property = self._data[idx]
-            positions = np.transpose(positions, (1, 0, 2))
-            particle_type = np.full(positions.shape[0], _particle_type, dtype=int)
-            material_property = np.full(positions.shape[0], _material_property, dtype=float)
-            n_particles_per_example = positions.shape[0]
-
-            trajectory = (
-                torch.tensor(positions).to(torch.float32).contiguous(),
-                torch.tensor(particle_type).contiguous(),
-                torch.tensor(material_property).to(torch.float32).contiguous(),
-                n_particles_per_example
-            )
-        else:
-            positions, _particle_type = self._data[idx]
-            positions = np.transpose(positions, (1, 0, 2))
-            particle_type = np.full(positions.shape[0], _particle_type, dtype=int)
-            n_particles_per_example = positions.shape[0]
-
-            trajectory = (
-                torch.tensor(positions).to(torch.float32).contiguous(),
-                torch.tensor(particle_type).contiguous(),
-                n_particles_per_example
-            )
-
-        return trajectory
+        positions, _particle_type = self._data[idx]
+        positions = np.transpose(positions, (1, 0, 2))
+        particle_type = np.full(positions.shape[0], _particle_type, dtype=int)
+        n_particles_per_example = positions.shape[0]
+        return (
+            torch.tensor(positions).to(torch.float32).contiguous(), 
+            torch.tensor(particle_type).contiguous(), 
+            n_particles_per_example
+        )
 
 
 def get_data_loader_by_samples(path, input_length_sequence, batch_size, shuffle=True):
