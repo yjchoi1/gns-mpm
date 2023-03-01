@@ -8,8 +8,8 @@ import h5py
 import numpy as np
 import os
 
-def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, dt=1.0):
 
+def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, material_feature: bool, dt=1.0):
     metadata_path = path
     result_path = [path + uuid]  # yc: I temporally force it to be list
 
@@ -103,7 +103,7 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, dt=1.0):
             running_sumsq[key] += np.sum(data ** 2)
             running_count[key] += np.size(data)
 
-        if os.path.exists(f"{metadata_path}/metadata.json"):
+        if os.path.exists(f"{metadata_path}/metadata.json") and material_feature is True:
             a = 3
             # read material_id and associated material properties in mpm_input.json
             # TODO: currently, it only supports single material type in one simulation
@@ -113,7 +113,7 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, dt=1.0):
             for material in mpm_input["materials"]:
                 if material["id"] == material_id:
                     material_for_id = material
-            normalized_friction = np.tan(material_for_id["friction"]*np.pi/180)
+            normalized_friction = np.tan(material_for_id["friction"] * np.pi / 180)
 
             trajectories[str(directory)] = (
                 positions,
@@ -133,14 +133,14 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, dt=1.0):
     np.savez_compressed(output, **trajectories)
     print(f"Output written to: {output}")
 
-def main(_):
 
+def main(_):
+    material_feature = False
     ndim = 3
     dt = 1.0
-    sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_friction_prelim_analysis/"
+    sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/"
     sim_names = [
-        "sand2dtestR_6k",
-        "sand2dtestR_10k"
+        "mpm-small-test5-5",
     ]
     uuid = "/results/small-test"
 
@@ -149,8 +149,10 @@ def main(_):
                            uuid=uuid,
                            ndim=ndim,
                            output=f"{sim_dir}{sim}/{sim}.npz",
+                           material_feature=material_feature,
                            dt=dt
                            )
+
 
 if __name__ == '__main__':
     app.run(main)
