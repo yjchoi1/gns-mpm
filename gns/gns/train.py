@@ -14,7 +14,7 @@ import tree
 from absl import flags
 from absl import app
 
-
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from gns import learned_simulator
 from gns import noise_utils
 from gns import reading_utils
@@ -47,15 +47,15 @@ from gns import data_loader
 
 ##### For debug
 flags.DEFINE_enum(
-    'mode', 'rollout', ['train', 'valid', 'rollout'],
+    'mode', 'train', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
-flags.DEFINE_string('data_path', '../gns-data/datasets/sand-small-r300-400step_serial/', help='The dataset directory.')
-flags.DEFINE_string('model_path', '../gns-data/models/sand-small-r300-400step_serial/', help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', '../gns-data/rollouts/sand-small-r300-400step_serial/', help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', 'model-15270000.pt', help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', 'train_state-15270000.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('data_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2d_material/', help='The dataset directory.')
+flags.DEFINE_string('model_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2d_material/', help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_material/', help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
@@ -77,6 +77,7 @@ Stats = collections.namedtuple('Stats', ['mean', 'std'])
 INPUT_SEQUENCE_LENGTH = 6  # So we can calculate the last 5 velocities.
 NUM_PARTICLE_TYPES = 9
 KINEMATIC_PARTICLE_ID = 3
+NUM_FEATURES = 3
 
 def rollout(
         simulator: learned_simulator.LearnedSimulator,
@@ -267,6 +268,7 @@ def train(
                                               input_length_sequence=INPUT_SEQUENCE_LENGTH,
                                               batch_size=FLAGS.batch_size,
                                             )
+  n_features = len(ds.dataset._data[0])
 
   print(f"device = {device}")
   not_reached_nsteps = True
@@ -295,11 +297,17 @@ def train(
   
   try:
     while not_reached_nsteps:
-      for ((position, particle_type, n_particles_per_example), labels) in ds:
-        position.to(device)
-        particle_type.to(device)
-        n_particles_per_example.to(device)
-        labels.to(device)
+      for example in ds:  # ((position, particle_type, material_property, n_particles_per_example), labels) are in dl
+        position = example[0][0]
+        particle_type = example[0][1]
+        if n_features == 3:  # if dl includes material_property
+          material_property = example[0][2]
+          n_particles_per_example = example[0][3]
+        elif n_features == 2:
+          n_particles_per_example = example[0][2]
+        else:
+          raise NotImplementedError
+        labels = example[1]
 
         # TODO (jpv): Move noise addition to data_loader
         # Sample the noise to add to the inputs to the model during training.
@@ -313,7 +321,9 @@ def train(
             position_sequence_noise=sampled_noise.to(device),
             position_sequence=position.to(device),
             nparticles_per_example=n_particles_per_example.to(device),
-            particle_types=particle_type.to(device))
+            particle_types=particle_type.to(device),
+            material_property=material_property.to(device) if n_features == 3 else None
+        )
 
         # Calculate the loss and mask out loss on kinematic particles
         loss = (pred_acc - target_acc) ** 2
@@ -394,7 +404,7 @@ def _get_simulator(
 
   simulator = learned_simulator.LearnedSimulator(
       particle_dimensions=metadata['dim'],
-      nnode_in=37 if metadata['dim'] == 3 else 30,
+      nnode_in=37+metadata["material_feature_len"] if metadata['dim'] == 3 else 30+metadata["material_feature_len"],
       nedge_in=metadata['dim'] + 1,
       latent_dim=128,
       nmessage_passing_steps=10,
