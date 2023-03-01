@@ -5,6 +5,8 @@ import pickle
 import glob
 import re
 import sys
+import time
+
 
 import numpy as np
 import torch
@@ -25,11 +27,11 @@ flags.DEFINE_enum(
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
-flags.DEFINE_string('data_path', None, help='The dataset directory.')
-flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2dR_prelim_test/", help='The dataset directory.')
+flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2dR_prelim_test/", help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2dR_prelim_test/", help='The path for saving outputs (e.g. rollouts).')
 flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
@@ -50,6 +52,7 @@ Stats = collections.namedtuple('Stats', ['mean', 'std'])
 INPUT_SEQUENCE_LENGTH = 6  # So we can calculate the last 5 velocities.
 NUM_PARTICLE_TYPES = 9
 KINEMATIC_PARTICLE_ID = 3
+NUM_FEATURES = 3
 
 def rollout(
         simulator: learned_simulator.LearnedSimulator,
@@ -112,7 +115,7 @@ def predict(device: str, FLAGS, flags, world_size):
   """Predict rollouts.
 
   Args:
-    simulator: Trained simulator if not will undergo training.
+    simulator: Trained simulator if not raise error.
 
   """
   metadata = reading_utils.read_metadata(FLAGS.data_path)
@@ -122,7 +125,7 @@ def predict(device: str, FLAGS, flags, world_size):
   if os.path.exists(FLAGS.model_path + FLAGS.model_file):
     simulator.load(FLAGS.model_path + FLAGS.model_file)
   else:
-    train(simulator, flags, world_size)
+    raise Exception(f"Model does not exist at {FLAGS.model_path + FLAGS.model_file}")
   
   simulator.to(device)
   simulator.eval()
@@ -138,6 +141,7 @@ def predict(device: str, FLAGS, flags, world_size):
 
   eval_loss = []
   with torch.no_grad():
+    begin = time.time()
     for example_i, (positions, particle_type, n_particles_per_example) in enumerate(ds):
       positions.to(device)
       particle_type.to(device)
@@ -160,7 +164,8 @@ def predict(device: str, FLAGS, flags, world_size):
         filename = os.path.join(FLAGS.output_path, filename)
         with open(filename, 'wb') as f:
           pickle.dump(example_rollout, f)
-
+  end = time.time()
+  print(f"Total runtime of the program is {end - begin}")
   print("Mean loss on rollout prediction: {}".format(
       torch.mean(torch.cat(eval_loss))))
 
@@ -234,6 +239,7 @@ def train(rank, flags, world_size):
                                                              input_length_sequence=INPUT_SEQUENCE_LENGTH,
                                                              batch_size=flags["batch_size"],
                                                             )
+  n_features = len(dl.dataset._data[0])
 
   print(f"rank = {rank}, cuda = {torch.cuda.is_available()}")
   not_reached_nsteps = True
@@ -263,11 +269,17 @@ def train(rank, flags, world_size):
   try:
     while not_reached_nsteps:
       torch.distributed.barrier()
-      for ((position, particle_type, n_particles_per_example), labels) in dl:
-        position.to(rank)
-        particle_type.to(rank)
-        n_particles_per_example.to(rank)
-        labels.to(rank)
+      for example in dl:  # ((position, particle_type, material_property, n_particles_per_example), labels) are in dl
+        position = example[0][0].to(rank)
+        particle_type = example[0][1].to(rank)
+        if n_features == 3:  # if dl includes material_property
+          material_property = example[0][2].to(rank)
+          n_particles_per_example = example[0][3].to(rank)
+        elif n_features == 2:
+          n_particles_per_example = example[0][2].to(rank)
+        else:
+          raise NotImplementedError
+        labels = example[1].to(rank)
 
         # TODO (jpv): Move noise addition to data_loader
         # Sample the noise to add to the inputs to the model during training.
@@ -281,7 +293,9 @@ def train(rank, flags, world_size):
             position_sequence_noise=sampled_noise.to(rank),
             position_sequence=position.to(rank),
             nparticles_per_example=n_particles_per_example.to(rank),
-            particle_types=particle_type.to(rank))
+            particle_types=particle_type.to(rank),
+            material_property=material_property.to(rank) if n_features == 3 else None
+        )
 
         # Calculate the loss and mask out loss on kinematic particles
         loss = (pred_acc - target_acc) ** 2
@@ -366,7 +380,7 @@ def _get_simulator(
 
   simulator = learned_simulator.LearnedSimulator(
       particle_dimensions=metadata['dim'],
-      nnode_in=37 if metadata['dim'] == 3 else 30,
+      nnode_in=37+metadata["material_feature_len"] if metadata['dim'] == 3 else 30+metadata["material_feature_len"],
       nedge_in=metadata['dim'] + 1,
       latent_dim=128,
       nmessage_passing_steps=10,

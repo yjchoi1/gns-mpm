@@ -9,6 +9,6 @@ module load python3/3.9
 
 export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
 
-source venv-stempede-cpu/bin/activate
+source ../gns-mpm-data/venv-stempede-cpu/bin/activate
 
 which python
