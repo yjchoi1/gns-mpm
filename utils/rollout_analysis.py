@@ -184,14 +184,14 @@ if __name__ == "__main__":
         runout_ax.set_ylabel(r"$(L_t - L_0)/L_0$")
         height_ax.set_ylabel(r"$H_t/L_0$")
         runout_ax.set_xlim(xmin=0, xmax=5)
-        runout_ax.set_ylim(ymin=0, ymax=1.5)
+        # runout_ax.set_ylim(ymin=0, ymax=1.5)
         height_ax.set_xlim(xmin=0, xmax=5)
         height_ax.set_ylim(ymin=0, ymax=1.5)
         # legend
         runout_p_set = p1 + p2
         runout_p_sets.extend(runout_p_set)
         runout_labs = [l.get_label() for l in runout_p_sets]
-        runout_ax.legend(ncol=2, loc="lower right", prop={'size': 8})
+        runout_ax.legend(ncol=2, loc="middle right", prop={'size': 8})
         runout_fig.tight_layout()
         # if i == 1:
         #     runout_fig.show()
@@ -218,7 +218,7 @@ if __name__ == "__main__":
         energy_p_set = p3 + p4 + p5
         energy_p_sets.extend(energy_p_set)
         energy_ax2.set_ylabel(r"$E_k/E_0$ and $E_d/E_0$")
-        energy_ax2.set_ylim(ymin=0, ymax=0.275)
+        energy_ax2.set_ylim(ymin=0, ymax=0.8)
         # energy_ax2.set_ylim(ymin=0, ymax=0.3)
         lines, labels = energy_ax.get_legend_handles_labels()
         lines2, labels2 = energy_ax2.get_legend_handles_labels()

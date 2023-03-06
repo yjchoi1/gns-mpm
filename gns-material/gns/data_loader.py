@@ -58,7 +58,6 @@ class SamplesDataset(torch.utils.data.Dataset):
         return training_example
 
 def collate_fn(data):
-
     material_property_as_feature = True if len(data[0][0]) >= 4 else False
     position_list = []
     particle_type_list = []

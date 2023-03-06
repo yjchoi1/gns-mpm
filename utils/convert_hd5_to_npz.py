@@ -138,11 +138,15 @@ def main(_):
     material_feature = False
     ndim = 3
     dt = 1.0
-    sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/"
+    sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d/"
     sim_names = [
-        "mpm-small-test5-5",
+        "sand3dtest4",
+        "sand3dtest3",
+        "sand3dtest2",
+        "sand3dtest1",
+        "sand3dtest0",
     ]
-    uuid = "/results/small-test"
+    uuid = "/results/sand3dtest"
 
     for i, sim in enumerate(sim_names):
         convert_hd5_to_npz(path=sim_dir + sim,

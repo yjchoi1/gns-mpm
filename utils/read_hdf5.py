@@ -1,7 +1,7 @@
 import h5py
 
-dir = "/work2/08264/baagee/frontera/gns-mpm/mpm/3d-sand8/3d-sand8/results/3d-sand8/"
-fnames = ["particles100000.h5"]
+dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/sand2d_frictions83/results/sand2d_frictions/"
+fnames = ["particles300000.h5"]
 # get size of trajectory
 with h5py.File(dir+fnames[0], "r") as f:
     (nparticles,) = f["table"]["coord_x"].shape

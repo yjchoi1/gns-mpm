@@ -3,12 +3,12 @@
 set -e
 
 # workdir
-export DATASET_NAME="sand-small-r300-400step_serial"
+export DATASET_NAME="sand3d-largesets-r045"
 #for ((STEPS=10000000; STEPS<14000000; STEPS+=1000000))
-for STEPS in 15270000
+for STEPS in 1210000
 do
 #export STEPS=15270000
-export OUTPUT_TAG="test4-3"
+export OUTPUT_TAG="test4"
 export TRAJECTORY_ID="0"
 
 ## Change test.npz that is used to make rollout to the specified `test_{OUTPUT_TAG}.npz which you want to make rollout
@@ -16,7 +16,7 @@ export WORK_DIR="../gns-mpm-data/gns-data"
 if test -f "${WORK_DIR}/datasets/${DATASET_NAME}/test.npz"
  then rm ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
 fi
-cp ${WORK_DIR}/datasets/${DATASET_NAME}/mpm-small-${OUTPUT_TAG}.npz ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
+cp ${WORK_DIR}/datasets/${DATASET_NAME}/sand3d${OUTPUT_TAG}.npz ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
 
 cd gns
 # Generate test rollouts.
@@ -37,7 +37,7 @@ python3 utils/render_rollout.py \
 --rollout_dir="${WORK_DIR}/rollouts/${DATASET_NAME}/" \
 --rollout_name="rollout_${OUTPUT_TAG}_${TRAJECTORY_ID}_step${STEPS}"
 
-# Make plots for normalized runout and energy evolution
-export WORK_DIR="gns-data"
-python3 utils/rollout_analysis.py --rollout_path ${WORK_DIR}/rollouts/${DATASET_NAME} --rollout_filename  rollout_${OUTPUT_TAG}_${TRAJECTORY_ID}_step${STEPS} --output_percentile 100 --output_filename="step${STEPS}_${OUTPUT_TAG}_${TRAJECTORY_ID}"
+## Make plots for normalized runout and energy evolution
+#export WORK_DIR="../gns-mpm-data/gns-data"
+#python3 utils/rollout_analysis.py --rollout_path ${WORK_DIR}/rollouts/${DATASET_NAME} --rollout_filename  rollout_${OUTPUT_TAG}_${TRAJECTORY_ID}_step${STEPS} --output_percentile 100 --output_filename="step${STEPS}_${OUTPUT_TAG}_${TRAJECTORY_ID}"
 done

@@ -54,8 +54,8 @@ flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
 flags.DEFINE_string('data_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2d_material/', help='The dataset directory.')
 flags.DEFINE_string('model_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2d_material/', help=('The path for saving checkpoints of the model.'))
 flags.DEFINE_string('output_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_material/', help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('model_file', "model-814.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', "train_state-814.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
@@ -83,6 +83,7 @@ def rollout(
         simulator: learned_simulator.LearnedSimulator,
         position: torch.tensor,
         particle_types: torch.tensor,
+        material_property: torch.tensor,
         n_particles_per_example: torch.tensor,
         nsteps: int,
         device):
@@ -100,13 +101,12 @@ def rollout(
   predictions = []
 
   for step in range(nsteps):
-    # print(step)
-    # start = time.time()
     # Get next position with shape (nnodes, dim)
     next_position = simulator.predict_positions(
         current_positions,
         nparticles_per_example=[n_particles_per_example],
         particle_types=particle_types,
+        material_property=material_property
     )
 
     # Update kinematic particles from prescribed trajectory.
@@ -116,8 +116,6 @@ def rollout(
     next_position = torch.where(
         kinematic_mask, next_position_ground_truth, next_position)
     predictions.append(next_position)
-    # end = time.time()
-    # print(end-start)
 
     # Shift `current_positions`, removing the oldest position in the sequence
     # and appending the next position at the end.
@@ -135,6 +133,7 @@ def rollout(
       'predicted_rollout': predictions.cpu().numpy(),
       'ground_truth_rollout': ground_truth_positions.cpu().numpy(),
       'particle_types': particle_types.cpu().numpy(),
+      'material_property': material_property.cpu().numpy()
   }
 
   return output_dict, loss
@@ -156,8 +155,8 @@ def predict(
   if os.path.exists(FLAGS.model_path + FLAGS.model_file):
     simulator.load(FLAGS.model_path + FLAGS.model_file)
   else:
-    train(simulator, device)
-  
+    raise Exception(f"Model does not exist at {FLAGS.model_path + FLAGS.model_file}")
+
   simulator.to(device)
   simulator.eval()
 
@@ -169,23 +168,31 @@ def predict(
   split = 'test' if FLAGS.mode == 'rollout' else 'valid'
 
   ds = data_loader.get_data_loader_by_trajectories(path=f"{FLAGS.data_path}{split}.npz")
+  # see if our dataset has material property as feature
+  if len(ds.dataset._data[0]) == 3:  # `ds` has (positions, particle_type, material_property)
+    material_property_as_feature = True
+  elif len(ds.dataset._data[0]) == 2:  # `ds` only has (positions, particle_type)
+    material_property_as_feature = False
+  else:
+    raise NotImplementedError
 
   eval_loss = []
   with torch.no_grad():
-    for example_i, (positions, particle_type, n_particles_per_example) in enumerate(ds):
-      positions.to(device)
-      particle_type.to(device)
-      n_particles_per_example = torch.tensor([int(n_particles_per_example)], dtype=torch.int32).to(device)
-
+    for example_i, label in enumerate(ds):
       nsteps = metadata['sequence_length'] - INPUT_SEQUENCE_LENGTH
+      positions = label[0].to(device)
+      particle_type = label[1].to(device)
+      material_property = label[2].to(device) if material_property_as_feature else None
+      n_particles_per_example = torch.tensor([int(label[3])], dtype=torch.int32).to(device)
+
       # Predict example rollout
-      example_rollout, loss = rollout(simulator, positions.to(device), particle_type.to(device),
-                                      n_particles_per_example.to(device), nsteps, device)
+      example_rollout, loss = rollout(simulator, positions, particle_type, material_property,
+                                      n_particles_per_example, nsteps, device)
 
       example_rollout['metadata'] = metadata
       print("Predicting example {} loss: {}".format(example_i, loss.mean()))
       eval_loss.append(torch.flatten(loss))
-      
+
       # Save rollout in testing
       if FLAGS.mode == 'rollout':
         example_rollout['metadata'] = metadata

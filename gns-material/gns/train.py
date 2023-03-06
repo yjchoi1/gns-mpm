@@ -23,16 +23,16 @@ from gns import data_loader
 from gns import distribute
 
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
-flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2dR_prelim_test/", help='The dataset directory.')
-flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2dR_prelim_test/", help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2dR_prelim_test/", help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
+flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2d_material/", help='The dataset directory.')
+flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2d_material/", help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_material/", help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', "model-814.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', "train_state-814.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('rollout_filename', "rollout_test", help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
@@ -58,6 +58,7 @@ def rollout(
         simulator: learned_simulator.LearnedSimulator,
         position: torch.tensor,
         particle_types: torch.tensor,
+        material_property: torch.tensor,
         n_particles_per_example: torch.tensor,
         nsteps: int,
         device):
@@ -80,6 +81,7 @@ def rollout(
         current_positions,
         nparticles_per_example=[n_particles_per_example],
         particle_types=particle_types,
+        material_property=material_property
     )
 
     # Update kinematic particles from prescribed trajectory.
@@ -106,6 +108,7 @@ def rollout(
       'predicted_rollout': predictions.cpu().numpy(),
       'ground_truth_rollout': ground_truth_positions.cpu().numpy(),
       'particle_types': particle_types.cpu().numpy(),
+      'material_property': material_property.cpu().numpy()
   }
 
   return output_dict, loss
@@ -126,7 +129,7 @@ def predict(device: str, FLAGS, flags, world_size):
     simulator.load(FLAGS.model_path + FLAGS.model_file)
   else:
     raise Exception(f"Model does not exist at {FLAGS.model_path + FLAGS.model_file}")
-  
+
   simulator.to(device)
   simulator.eval()
 
@@ -138,24 +141,31 @@ def predict(device: str, FLAGS, flags, world_size):
   split = 'test' if FLAGS.mode == 'rollout' else 'valid'
 
   ds = data_loader.get_data_loader_by_trajectories(path=f"{FLAGS.data_path}{split}.npz")
+  # see if our dataset has material property as feature
+  if len(ds.dataset._data[0]) == 3:  # `ds` has (positions, particle_type, material_property)
+    material_property_as_feature = True
+  elif len(ds.dataset._data[0]) == 2:  # `ds` only has (positions, particle_type)
+    material_property_as_feature = False
+  else:
+    raise NotImplementedError
 
   eval_loss = []
   with torch.no_grad():
-    begin = time.time()
-    for example_i, (positions, particle_type, n_particles_per_example) in enumerate(ds):
-      positions.to(device)
-      particle_type.to(device)
-      n_particles_per_example = torch.tensor([int(n_particles_per_example)], dtype=torch.int32).to(device)
-
+    for example_i, label in enumerate(ds):
       nsteps = metadata['sequence_length'] - INPUT_SEQUENCE_LENGTH
+      positions = label[0].to(device)
+      particle_type = label[1].to(device)
+      material_property = label[2].to(device) if material_property_as_feature else None
+      n_particles_per_example = torch.tensor([int(label[3])], dtype=torch.int32).to(device)
+
       # Predict example rollout
-      example_rollout, loss = rollout(simulator, positions.to(device), particle_type.to(device),
-                                      n_particles_per_example.to(device), nsteps, device)
+      example_rollout, loss = rollout(simulator, positions, particle_type, material_property,
+                                      n_particles_per_example, nsteps, device)
 
       example_rollout['metadata'] = metadata
       print("Predicting example {} loss: {}".format(example_i, loss.mean()))
       eval_loss.append(torch.flatten(loss))
-      
+
       # Save rollout in testing
       if FLAGS.mode == 'rollout':
         example_rollout['metadata'] = metadata
@@ -164,8 +174,7 @@ def predict(device: str, FLAGS, flags, world_size):
         filename = os.path.join(FLAGS.output_path, filename)
         with open(filename, 'wb') as f:
           pickle.dump(example_rollout, f)
-  end = time.time()
-  print(f"Total runtime of the program is {end - begin}")
+
   print("Mean loss on rollout prediction: {}".format(
       torch.mean(torch.cat(eval_loss))))
 
@@ -227,10 +236,10 @@ def train(rank, flags, world_size):
       optimizer_to(optimizer, rank)
       # set global train state
       step = train_state["global_train_state"].pop("step")
- 
+
     else:
       msg = f'Specified model_file {flags["model_path"] + flags["model_file"]} and train_state_file {flags["model_path"] + flags["train_state_file"]} not found.'
-      raise FileNotFoundError(msg) 
+      raise FileNotFoundError(msg)
 
   simulator.train()
   simulator.to(rank)
@@ -243,7 +252,7 @@ def train(rank, flags, world_size):
 
   print(f"rank = {rank}, cuda = {torch.cuda.is_available()}")
   not_reached_nsteps = True
-  
+
   # yc: loss history using resume option
   # using resume option
   if rank == 0:
@@ -331,7 +340,7 @@ def train(rank, flags, world_size):
               loss_hist.append([step, loss])
               with open(filename, 'wb') as f:
                 pickle.dump(loss_hist, f)
-	
+
         # Complete training
         if (step >= flags["ntraining_steps"]):
           not_reached_nsteps = False
