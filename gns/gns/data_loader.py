@@ -114,6 +114,7 @@ class TrajectoriesDataset(torch.utils.data.Dataset):
         self._data = [item for _, item in np.load(path, allow_pickle=True).items()]
         self._dimension = self._data[0][0].shape[-1]
         self._length = len(self._data)
+        self._material_property_as_feature = True if len(self._data[0]) >= 3 else False
 
     def __len__(self):
         return self._length
