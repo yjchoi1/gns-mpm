@@ -178,12 +178,12 @@ def predict(
 
   eval_loss = []
   with torch.no_grad():
-    for example_i, label in enumerate(ds):
+    for example_i, features in enumerate(ds):
       nsteps = metadata['sequence_length'] - INPUT_SEQUENCE_LENGTH
-      positions = label[0].to(device)
-      particle_type = label[1].to(device)
-      material_property = label[2].to(device) if material_property_as_feature else None
-      n_particles_per_example = torch.tensor([int(label[3])], dtype=torch.int32).to(device)
+      positions = features[0].to(device)
+      particle_type = features[1].to(device)
+      material_property = features[2].to(device) if material_property_as_feature else None
+      n_particles_per_example = torch.tensor([int(features[3])], dtype=torch.int32).to(device)
 
       # Predict example rollout
       example_rollout, loss = rollout(simulator, positions, particle_type, material_property,
