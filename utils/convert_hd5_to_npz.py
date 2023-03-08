@@ -135,18 +135,12 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, material_fe
 
 
 def main(_):
-    material_feature = False
-    ndim = 3
+    material_feature = True
+    ndim = 2
     dt = 1.0
-    sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d/"
-    sim_names = [
-        "sand3dtest4",
-        "sand3dtest3",
-        "sand3dtest2",
-        "sand3dtest1",
-        "sand3dtest0",
-    ]
-    uuid = "/results/sand3dtest"
+    sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/"
+    sim_names = [f"sand2d_frictions{i}" for i in range(310, 385)]
+    uuid = "/results/sand2d_frictions"
 
     for i, sim in enumerate(sim_names):
         convert_hd5_to_npz(path=sim_dir + sim,

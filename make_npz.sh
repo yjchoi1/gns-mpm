@@ -12,7 +12,7 @@ dim=2
 
 # multiple
 #for ((DATA_TAG=0; DATA_TAG<60; DATA_TAG+=1))
-for DATA_TAG in {180..239..1}
+for DATA_TAG in {379..384..1}
   do
     # workdir
     export MPM_DIR="/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/"

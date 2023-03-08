@@ -9,3 +9,4 @@ torch_geometric
 torch_sparse
 torch_scatter
 torch-cluster
+h5py

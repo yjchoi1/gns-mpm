@@ -1,6 +1,6 @@
 set -e
 
-for i in {61..119..3}
+for i in {120..384..4}
 do
 python3 animation_from_h5.py \
 --path "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/sand2d_frictions${i}/results/sand2d_frictions/" \

@@ -7,16 +7,18 @@ bounds = [[0.0-0.0025, 1.0+0.0025],
 sequence_length = int(380)
 default_connectivity_radius = 0.020
 dim = int(2)
+material_feature_len = int(1)
 dt_mpm = 0.0025  # 0.0025
 mpm_cell_size = [1/100, 1/100, 1/100]  # [0.0125, 0.0125]
 nparticles_per_cell = int(2*2)  # int(16)
 dt_gns = 1.0  # 1.0 is default
 
-mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/sand2d_frictions18"  # "./mpm"
+mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/"  # "./mpm"
 data_case = "sand2d_frictions"  # "mpm-9k-train"
-# data_tags = [str(i) for i in np.arange(0, 24)] + [str(25), str(26)]
-data_tags = [str(i) for i in np.arange(0, 60)]
-save_name = "sand2d_prelim_merged"
+data_tags = [i for i in range(0, 385)]
+excluded_data_tags = [83, 144, 148]
+data_tags = [i for i in data_tags if i not in excluded_data_tags]
+save_name = "sand2d_frictions_merged"
 
 
 trajectories = {}
@@ -129,6 +131,7 @@ if dim == 3:
         "sequence_length": sequence_length,
         "default_connectivity_radius": default_connectivity_radius,
         "boundary_augment": 1.0,
+        "material_feature_len": material_feature_len,
         "dim": dim,
         "dt": dt_mpm,
         "vel_mean": [statistics["mean_velocity_x"], statistics["mean_velocity_y"], statistics["mean_velocity_z"]],
