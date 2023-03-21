@@ -15,7 +15,7 @@ from gns import train
 
 initial_conditions_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/inverse/sand2d_frictions/sand2d_frictions338/initial_conditions.npz"
 gns_metadata_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/inverse/sand2d_frictions/sand2d_frictions338/"
-nsteps = 380
+nsteps = 100
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = torch.device('cpu')
 noise_std = 6.7e-4
@@ -25,17 +25,18 @@ model_file = "model-390000.pt"
 target_runout = 1.0
 
 
-def runout(
+def runout_loss(
         simulator: learned_simulator.LearnedSimulator,
         initial_positions: torch.tensor,
         particle_types: torch.tensor,
         material_property: torch.tensor,  # torch scalar
         n_particles_per_example: torch.tensor,
         nsteps: int,
+        target,
         device):
     """
     Rolls out a trajectory by applying the model in sequence and -
-    compute final runout distance of the column collapse at the edge
+    compute loss between final runout of the column collapse at the edge and target value
     Args:
         simulator: Learned simulator
         initial_positions: Torch tensor for initial position
@@ -71,8 +72,9 @@ def runout(
     initial_length = torch.max(initial_positions[:, 0, 0])
     final_length = torch.max(current_positions[:, -1, 0])
     normalized_runout = (final_length - initial_length / initial_length)
+    loss = torch.nn.functional.mse_loss(normalized_runout, target)
 
-    return normalized_runout
+    return loss
 
 
 # Load simulator
@@ -92,28 +94,35 @@ for example_i, features in enumerate(dinit):
     # Obtain features
     if len(features) < 3:
         raise NotImplementedError("Data should include material feature")
-    positions = features[0].to(device)
-    particle_type = features[1].to(device)
-    material_property = features[2].to(device)
-    n_particles_per_example = torch.tensor([int(features[3])], dtype=torch.int32).to(device)
+    positions = features[0].to(device).requires_grad_(False)
+    particle_type = features[1].to(device).requires_grad_(False)
+    material_property = features[2].to(device).requires_grad_(False)
+    n_particles_per_example = torch.tensor([int(features[3])], dtype=torch.int32).to(device).requires_grad_(False)
     phi = material_property[0].clone().detach().requires_grad_(True)
-
-    # Predict example rollout
-    normalized_runout = runout(simulator, positions, particle_type, phi,
-                               n_particles_per_example, nsteps, device)
 
     # Calculate the loss (i.e., mse between target runout and current runout with current phi)
     target = torch.tensor(target_runout)
-    loss = torch.nn.functional.mse_loss(normalized_runout, target)
-    print(f"Loss: {loss}")
+
+    # Compute runout loss
+    normalized_runout_loss = runout_loss(simulator, positions, particle_type, phi,
+                               n_particles_per_example, nsteps, target, device)
+
+    print(f"Loss: {normalized_runout_loss}")
 
     # Compute gradients of loss with respect to input material_type, phi
-    loss.backward(retain_graph=True, inputs=[phi])
+    normalized_runout_loss.backward(retain_graph=False, inputs=[phi])
 
     # Access gradients of input material_type
     grads = phi.grad
 
     # Print the gradients
     print(f"Gradient of loss w.r.t phi is: {grads}")
+
+    # # grad check
+    # grads_check = torch.autograd.gradcheck(
+    #     runout_loss,
+    #     (simulator, positions, particle_type, phi, n_particles_per_example, nsteps, target, device)
+    # )
+    # print(f"Gradient check: {grads_check}")
 
 

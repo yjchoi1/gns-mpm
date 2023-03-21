@@ -3,12 +3,12 @@
 set -e
 
 # workdir
-export DATASET_NAME="sand3d-largesets-r045"
+export DATASET_NAME="sand2d_frictions-r015"
 #for ((STEPS=10000000; STEPS<14000000; STEPS+=1000000))
-for STEPS in 1210000
+for STEPS in 3550000
 do
 #export STEPS=15270000
-export OUTPUT_TAG="test4"
+export OUTPUT_TAG="test13"
 export TRAJECTORY_ID="0"
 
 ## Change test.npz that is used to make rollout to the specified `test_{OUTPUT_TAG}.npz which you want to make rollout
@@ -16,9 +16,9 @@ export WORK_DIR="../gns-mpm-data/gns-data"
 if test -f "${WORK_DIR}/datasets/${DATASET_NAME}/test.npz"
  then rm ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
 fi
-cp ${WORK_DIR}/datasets/${DATASET_NAME}/sand3d${OUTPUT_TAG}.npz ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
+cp ${WORK_DIR}/datasets/${DATASET_NAME}/sand2d_frictions_${OUTPUT_TAG}.npz ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
 
-cd gns
+cd gns-material
 # Generate test rollouts.
 export WORK_DIR="../../gns-mpm-data/gns-data"
 python3 -m gns.train \

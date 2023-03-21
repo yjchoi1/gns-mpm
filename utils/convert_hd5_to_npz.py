@@ -3,10 +3,20 @@ import pathlib
 import glob
 import re
 from absl import app
+from absl import flags
 import json
 import h5py
 import numpy as np
 import os
+
+
+# flags.BooleanFlag('material_feature', True, help='Whether to add material properties to the feature.')
+# flags.DEFINE_integer('ndim', None, help='Dimensions of the simulation.')
+# flags.DEFINE_float('dt', 1.0, help='Time interval for finite diff to compute vel and accel from position sequence')
+# flags.DEFINE_string('sim_dir', None, help='Simulation directory.')  # "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/"
+# flags.DEFINE_string('sim_name', None, help='Name of each simulation.')  # "sand2d_frictions_test{i}"
+# flags.DEFINE_string('uuid', None, help='Directory where `.h5` files are located.')  # "/results/sand2d_frictions_test"
+# FLAGS = flags.FLAGS
 
 
 def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, material_feature: bool, dt=1.0):
@@ -104,7 +114,6 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, material_fe
             running_count[key] += np.size(data)
 
         if os.path.exists(f"{metadata_path}/metadata.json") and material_feature is True:
-            a = 3
             # read material_id and associated material properties in mpm_input.json
             # TODO: currently, it only supports single material type in one simulation
             material_id = metadata["particle"]["group0"]["material_id"]
@@ -116,12 +125,14 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, material_fe
             normalized_friction = np.tan(material_for_id["friction"] * np.pi / 180)
 
             trajectories[str(directory)] = (
-                positions,
-                np.full(positions.shape[1], 6, dtype=int),
-                np.full(positions.shape[1], normalized_friction, dtype=float))
-            a = 3
+                positions,  # position sequence (timesteps, particles, dims)
+                # TODO: particle type is hardcoded to be 6
+                np.full(positions.shape[1], 6, dtype=int),  # particle type (particles, )
+                np.full(positions.shape[1], normalized_friction, dtype=float))  # material type (particles, )
         else:
-            trajectories[str(directory)] = (positions, np.full(positions.shape[1], 6, dtype=int))
+            trajectories[str(directory)] = (
+                positions,  # position sequence (timesteps, particles, dims)
+                np.full(positions.shape[1], 6, dtype=int))   # particle type (particles, )
 
     # compute online mean and standard deviation.
     print("Statistis across all trajectories:")
@@ -134,23 +145,3 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, material_fe
     print(f"Output written to: {output}")
 
 
-def main(_):
-    material_feature = True
-    ndim = 2
-    dt = 1.0
-    sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/"
-    sim_names = [f"sand2d_frictions{i}" for i in range(310, 385)]
-    uuid = "/results/sand2d_frictions"
-
-    for i, sim in enumerate(sim_names):
-        convert_hd5_to_npz(path=sim_dir + sim,
-                           uuid=uuid,
-                           ndim=ndim,
-                           output=f"{sim_dir}{sim}/{sim}.npz",
-                           material_feature=material_feature,
-                           dt=dt
-                           )
-
-
-if __name__ == '__main__':
-    app.run(main)

@@ -115,6 +115,7 @@ if dim == 2:
         "sequence_length": sequence_length,
         "default_connectivity_radius": default_connectivity_radius,
         "boundary_augment": 1.0,
+        "material_feature_len": material_feature_len,
         "dim": dim,
         "dt": dt_mpm,
         "vel_mean": [statistics["mean_velocity_x"], statistics["mean_velocity_y"]],
