@@ -12,7 +12,7 @@ module load phdf5
 module load python3/3.9
 export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
 
-source ../gns/venv/bin/activate
+source ../venv-ls6-gpu/bin/activate
 
 # test env
 # --------
