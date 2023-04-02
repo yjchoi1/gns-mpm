@@ -2,7 +2,6 @@ import numpy as np
 import pickle
 import matplotlib as mpl
 from matplotlib import pyplot as plt
-import pandas as pd
 from matplotlib.cm import ScalarMappable
 import os
 import sys
@@ -10,7 +9,6 @@ import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats
 from sklearn.metrics import mean_squared_error
-import seaborn as sns
 
 rollout_tags = \
 [
@@ -223,32 +221,32 @@ for i, (rollout_name, data) in enumerate(individual_error.items()):
     plt.tight_layout()
     fig.savefig(f"{save_path}/error_indiv_{rollout_tags[i][1]}.png")
 
-# # plot spacial distribution of error evolution
-# for i, (rollout_name, data) in enumerate(individual_error.items()):
-#     positions = trajectories[rollout_name]["gns"]["positions"]
-#     normalized_times = trajectories[rollout_name]["mpm"]["normalized_times"]
-#     time_samples = np.linspace(0, len(normalized_times), 10, endpoint=False).astype(int)
-#     for t in time_samples:
-#         fig, axs = plt.subplots(1, 3, figsize=(14, 4.5))
-#         for j, (kinematic_type, value) in enumerate(data.items()):
-#             vmax = np.ndarray.flatten(value).max()
-#             vmin = np.ndarray.flatten(value).min()
-#             ax = axs[j]
-#             sampled_value = value[t]
-#             geometry = ax.scatter(positions[t, :, 0], positions[t, :, 1],
-#                                   c=sampled_value, vmin=vmin, vmax=vmax)
-#             ax.set_xlim(metadata["bounds"][0])
-#             ax.set_ylim(metadata["bounds"][1])
-#             ax.set_aspect('equal')
-#             ax.set_title(f"MSE for {kinematic_type}")
-#             fig.colorbar(geometry, ax=ax, shrink=0.5)
-#         plt.tight_layout()
-#         sampled_normalized_times = normalized_times[t]
-#         plt.suptitle(f"{rollout_tags[i][1]} at {sampled_normalized_times:.2f}")
-#         plt.savefig(f"{save_path}/error_geom_{rollout_tags[i][1]}_at{sampled_normalized_times}.png")
-#         # plt.show()
-# a = 1
-#
-#
-#
-#
+# plot spacial distribution of error evolution
+for i, (rollout_name, data) in enumerate(individual_error.items()):
+    positions = trajectories[rollout_name]["gns"]["positions"]
+    normalized_times = trajectories[rollout_name]["mpm"]["normalized_times"]
+    time_samples = np.linspace(0, len(normalized_times), 10, endpoint=False).astype(int)
+    for t in time_samples:
+        fig, axs = plt.subplots(1, 3, figsize=(14, 4.5))
+        for j, (kinematic_type, value) in enumerate(data.items()):
+            vmax = np.ndarray.flatten(value).max()
+            vmin = np.ndarray.flatten(value).min()
+            ax = axs[j]
+            sampled_value = value[t]
+            geometry = ax.scatter(positions[t, :, 0], positions[t, :, 1],
+                                  c=sampled_value, vmin=vmin, vmax=vmax)
+            ax.set_xlim(metadata["bounds"][0])
+            ax.set_ylim(metadata["bounds"][1])
+            ax.set_aspect('equal')
+            ax.set_title(f"MSE for {kinematic_type}")
+            fig.colorbar(geometry, ax=ax, shrink=0.5)
+        plt.tight_layout()
+        sampled_normalized_times = normalized_times[t]
+        plt.suptitle(f"{rollout_tags[i][1]} at {sampled_normalized_times:.2f}")
+        plt.savefig(f"{save_path}/error_geom_{rollout_tags[i][1]}_at{sampled_normalized_times}.png")
+        # plt.show()
+a = 1
+
+
+
+
