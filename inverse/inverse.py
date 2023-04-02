@@ -191,12 +191,12 @@ for epoch in range(nepoch):
                 end_rollout = time.time()
                 print(f"Rollout for phi {guess} took {end_rollout - start_rollout}s")
 
-                print(f"Loss at {guess}: {loss}")
-                loss_between_dphi.append(loss)
+                print(f"Loss at {guess}: {loss.cpu().numpy()}")
+                loss_between_dphi.append(loss.cpu().numpy())
 
                 # Save rollout in testing
                 rollout_data['metadata'] = metadata
-                rollout_data['loss'] = loss
+                rollout_data['loss'] = loss.cpu().numpy()
                 filename = f'{path}/mpm_phi{guess}/mpm_phi{guess}.pkl'
                 with open(filename, 'wb') as f:
                     pickle.dump(rollout_data, f)
@@ -212,7 +212,7 @@ for epoch in range(nepoch):
 
         # record rollout and loss
         record[f"rollout_phi{guess}"] = rollout_data
-        record[f"loss_phi{guess}"] = loss
+        record[f"loss_phi{guess}"] = loss.cpu().numpy()
 
     # %% RADIENT DESCENT AND UPDATE PHI
     grad = (loss_between_dphi[0] - loss_between_dphi[1]) / (phi - (phi + dphi))
