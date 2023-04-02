@@ -24,6 +24,7 @@ KINEMATIC_PARTICLE_ID = 3
 batch_size = 2
 steps = np.arange(0, 4000000, 20000)  # Training steps to evaluate loss
 ntrajectory = 1  # The number of trajectories to evaluate loss
+n_features = 3
 
 
 # Set device and import simulator
@@ -44,12 +45,18 @@ def onestep_loss(model_file, ds, eval_points):
 
     eval_loss = []
     # evaluate mean one-step loss for "eval_points" number of examples
-    for i, ((position, particle_type, n_particles_per_example), labels) in enumerate(ds):
+    for i, example in enumerate(ds):
         if i in eval_points:
-            position.to(device)
-            particle_type.to(device)
-            n_particles_per_example = n_particles_per_example.to(device)
-            labels.to(device)
+            position = example[0][0]
+            particle_type = example[0][1]
+            if n_features == 3:  # if dl includes material_property
+                material_property = example[0][2]
+                n_particles_per_example = example[0][3]
+            elif n_features == 2:
+                n_particles_per_example = example[0][2]
+            else:
+                raise NotImplementedError
+            labels = example[1]
 
             # Sample the noise to add to the inputs to the model during training.
             sampled_noise = noise_utils.get_random_walk_noise_for_position_sequence(
@@ -63,7 +70,9 @@ def onestep_loss(model_file, ds, eval_points):
                 position_sequence_noise=sampled_noise.to(device),
                 position_sequence=position.to(device),
                 nparticles_per_example=n_particles_per_example.to(device),
-                particle_types=particle_type.to(device))
+                particle_types=particle_type.to(device),
+                material_property=material_property.to(device) if n_features == 3 else None
+            )
 
             # Calculate the loss and mask out loss on kinematic particles
             loss = (pred_acc - target_acc) ** 2
