@@ -8,17 +8,17 @@ import sys
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy import stats
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 
 rollout_tags = \
 [
-    # [("test2-1", "a=0.5", "solid", "0.9"),  # (simulation id, aspect ratio, linetype, linecolor)
-    #  ("test4", "a=0.8", (0, (5, 1)), "0.7"),
-    #  ("test0-2", "a=1.0", (0, (5, 5)), "0.5"),
-    #  ("test5-1", "a=2.0", (0, (1, 1)), "0.3"),
-    #  ("test5-5", "a=3.0", "dashdot", "0.15"),
-    #  ("test6-1", "a=4.0", (0, (3, 5, 1, 5)), "0.0"),
-     ("test4-2", "Upscaled a=0.8", "dotted", "0.7")]
+    ("test2-1", "a=0.5", "solid", "0.9"),  # (simulation id, aspect ratio, linetype, linecolor)
+    ("test4", "a=0.8", (0, (5, 1)), "0.7"),
+    ("test0-2", "a=1.0", (0, (5, 5)), "0.5"),
+    ("test5-1", "a=2.0", (0, (1, 1)), "0.3"),
+    ("test5-5", "a=3.0", "dashdot", "0.15"),
+    ("test6-1", "a=4.0", (0, (3, 5, 1, 5)), "0.0"),
+    ("test4-2", "Upscaled a=0.8", "dotted", "0.7")]
 data_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand-small-r300-400step_serial/"
 save_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand-small-r300-400step_serial/"
 training_steps = 15270000
@@ -120,11 +120,16 @@ def compute_kinemacis(trajectories):
 def kinematic_error(kinematics_info):
     erros = {}
     individual_error = {}
+    mape = {}
+
     for rollout_name, data in kinematics_info.items():
         erros[rollout_name] = {}
         individual_error[rollout_name] = {}
+        mape[rollout_name] = {}
 
         timesteps = len(data["mpm"]["displacement"])
+
+        # MSE for entire particles
         for kinematic_type in data["mpm"].keys():
             mse = [
                 mean_squared_error(
@@ -132,40 +137,50 @@ def kinematic_error(kinematics_info):
             ]
             # if kinematic_type == "displacement":
             #     static_portion = sum(data["gns"][kinematic_type][-1] < 0.012) / len(data["gns"][kinematic_type])
-            erros[rollout_name][kinematic_type] = mse
+            erros[rollout_name][kinematic_type] = np.array(mse)
 
+        # MSE for individual particles
         for kinematic_type in data["mpm"].keys():
             individual_mse = [
                 (data["gns"][kinematic_type][t] - data["mpm"][kinematic_type][t])**2/2
                  for t in range(timesteps)
             ]
             individual_error[rollout_name][kinematic_type] = np.array(individual_mse)
-        a=5
 
-    return erros, individual_error
+        # MAPE for entire particles
+        for kinematic_type in data["mpm"].keys():
+            mape_temp = [
+                # np.mean(np.abs(data["mpm"][kinematic_type][t] - data["gns"][kinematic_type][t]) / data["mpm"][kinematic_type][t]) * 100
+                mean_absolute_percentage_error(
+                    data["gns"][kinematic_type][t], data["mpm"][kinematic_type][t]) for t in range(timesteps)
+            ]
+            mape[rollout_name][kinematic_type] = np.array(mape_temp)
+
+
+    return erros, individual_error, mape
 
 # get error
 trajectories, metadata = get_positions(data_path, rollout_filenames)
 kinematics_info = compute_kinemacis(trajectories)
-error_data, individual_error = kinematic_error(kinematics_info)
+error_data, individual_error, mape = kinematic_error(kinematics_info)
 
 
-# # plot errors for each rollout
-# fig, ax = plt.subplots(1, 3, figsize=(14, 3.5))
-# for i, (rollout_name, data) in enumerate(error_data.items()):
-#     for j, (kinematic_type, value) in enumerate(data.items()):
-#         normalized_times = trajectories[rollout_name]["mpm"]["normalized_times"]
-#         ax[j].plot(normalized_times, value, linestyle=rollout_tags[i][2], color=rollout_tags[i][3], label=rollout_tags[i][1])
-#         ax[j].set_xlabel(r"$t / \tau_c$")
-#         ax[j].set_ylabel(f"MSE for {kinematic_type}")
-#         ax[j].set_xlim(left=0, right=7)
-#         ax[j].set_ylim(bottom=0, top=3e-3)
-#         ax[j].ticklabel_format(axis='y', style='sci', scilimits=(0,0))
-#         # ax[j].set_yscale("log")
-#         ax[j].legend(loc='best', prop={'size': 9})
-#     # fig.show()
-#     plt.tight_layout()
-#     fig.savefig(f"{save_path}/error.png")
+# plot errors for each rollout
+fig, ax = plt.subplots(1, 3, figsize=(14, 3.5))
+for i, (rollout_name, data) in enumerate(mape.items()):
+    for j, (kinematic_type, value) in enumerate(data.items()):
+        normalized_times = trajectories[rollout_name]["mpm"]["normalized_times"]
+        ax[j].plot(normalized_times, value, linestyle=rollout_tags[i][2], color=rollout_tags[i][3], label=rollout_tags[i][1])
+        ax[j].set_xlabel(r"$t / \tau_c$")
+        ax[j].set_ylabel(f"MAPE for {kinematic_type}")
+        ax[j].set_xlim(left=0, right=8)
+        # ax[j].set_ylim(bottom=0, top=3e-3)
+        ax[j].ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+        # ax[j].set_yscale("log")
+        ax[j].legend(loc='best', prop={'size': 9})
+    # fig.show()
+    plt.tight_layout()
+    fig.savefig(f"{save_path}/error.png")
 
 # plot errors for individual particles for each rollout
 for i, (rollout_name, data) in enumerate(individual_error.items()):
@@ -221,32 +236,32 @@ for i, (rollout_name, data) in enumerate(individual_error.items()):
     plt.tight_layout()
     fig.savefig(f"{save_path}/error_indiv_{rollout_tags[i][1]}.png")
 
-# plot spacial distribution of error evolution
-for i, (rollout_name, data) in enumerate(individual_error.items()):
-    positions = trajectories[rollout_name]["gns"]["positions"]
-    normalized_times = trajectories[rollout_name]["mpm"]["normalized_times"]
-    time_samples = np.linspace(0, len(normalized_times), 10, endpoint=False).astype(int)
-    for t in time_samples:
-        fig, axs = plt.subplots(1, 3, figsize=(14, 4.5))
-        for j, (kinematic_type, value) in enumerate(data.items()):
-            vmax = np.ndarray.flatten(value).max()
-            vmin = np.ndarray.flatten(value).min()
-            ax = axs[j]
-            sampled_value = value[t]
-            geometry = ax.scatter(positions[t, :, 0], positions[t, :, 1],
-                                  c=sampled_value, vmin=vmin, vmax=vmax)
-            ax.set_xlim(metadata["bounds"][0])
-            ax.set_ylim(metadata["bounds"][1])
-            ax.set_aspect('equal')
-            ax.set_title(f"MSE for {kinematic_type}")
-            fig.colorbar(geometry, ax=ax, shrink=0.5)
-        plt.tight_layout()
-        sampled_normalized_times = normalized_times[t]
-        plt.suptitle(f"{rollout_tags[i][1]} at {sampled_normalized_times:.2f}")
-        plt.savefig(f"{save_path}/error_geom_{rollout_tags[i][1]}_at{sampled_normalized_times}.png")
-        # plt.show()
-a = 1
-
-
-
-
+# # plot spacial distribution of error evolution
+# for i, (rollout_name, data) in enumerate(individual_error.items()):
+#     positions = trajectories[rollout_name]["gns"]["positions"]
+#     normalized_times = trajectories[rollout_name]["mpm"]["normalized_times"]
+#     time_samples = np.linspace(0, len(normalized_times), 10, endpoint=False).astype(int)
+#     for t in time_samples:
+#         fig, axs = plt.subplots(1, 3, figsize=(14, 4.5))
+#         for j, (kinematic_type, value) in enumerate(data.items()):
+#             vmax = np.ndarray.flatten(value).max()
+#             vmin = np.ndarray.flatten(value).min()
+#             ax = axs[j]
+#             sampled_value = value[t]
+#             geometry = ax.scatter(positions[t, :, 0], positions[t, :, 1],
+#                                   c=sampled_value, vmin=vmin, vmax=vmax)
+#             ax.set_xlim(metadata["bounds"][0])
+#             ax.set_ylim(metadata["bounds"][1])
+#             ax.set_aspect('equal')
+#             ax.set_title(f"MSE for {kinematic_type}")
+#             fig.colorbar(geometry, ax=ax, shrink=0.5)
+#         plt.tight_layout()
+#         sampled_normalized_times = normalized_times[t]
+#         plt.suptitle(f"{rollout_tags[i][1]} at {sampled_normalized_times:.2f}")
+#         plt.savefig(f"{save_path}/error_geom_{rollout_tags[i][1]}_at{sampled_normalized_times}.png")
+#         # plt.show()
+# a = 1
+#
+#
+#
+#
