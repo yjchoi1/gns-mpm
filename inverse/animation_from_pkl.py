@@ -48,3 +48,15 @@ def animation_from_pkl(path, output, xbound, ybound):
         raise NotImplementedError("Does not support 3d render!")
 
 
+def plot_final_position(path, output, xbound, ybound):
+    rollout_path = path
+    final_position = pickle.load(open(rollout_path, "rb"))
+
+    fig, ax = plt.subplots()
+    ax.scatter(final_position[:, 0], final_position[:, 1], s=1)
+    ax.set_xlim([float(xbound[0]), float(xbound[1])])
+    ax.set_ylim([float(ybound[0]), float(ybound[1])])
+    ax.set_aspect('equal')
+    ax.grid(True, which='both')
+    plt.savefig(f"{output}/final_position.png")
+    print(f"Plot saved to: {output}")
