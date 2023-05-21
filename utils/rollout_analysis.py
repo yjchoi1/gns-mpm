@@ -9,24 +9,24 @@ import argparse
 
 if __name__ == "__main__":
 
-    #%% Inputs for mesh, node, node_sets
-    parser = argparse.ArgumentParser(description='Make rollout analysis plots')
-    parser.add_argument('--rollout_path', help="Path to rollout")
-    parser.add_argument('--rollout_filename', help='File name of the rollout to analyse')
-    parser.add_argument('--output_percentile', default=100, type=float, help="Percentile from the farthest runout where the analysis based on")
-    parser.add_argument('--output_filename', help='Output file name to save plots')
-    args = parser.parse_args()
+    # #%% Inputs for mesh, node, node_sets
+    # parser = argparse.ArgumentParser(description='Make rollout analysis plots')
+    # parser.add_argument('--rollout_path', help="Path to rollout")
+    # parser.add_argument('--rollout_filename', help='File name of the rollout to analyse')
+    # parser.add_argument('--output_percentile', default=100, type=float, help="Percentile from the farthest runout where the analysis based on")
+    # parser.add_argument('--output_filename', help='Output file name to save plots')
+    # args = parser.parse_args()
 
-    # rollout_path = "../gns-data/rollouts/sand-small-r300-400step_serial"
-    # rollout_filename = "rollout_test6-1_0_step15270000"
-    # output_percentile = 100
-    # output_filename = "step15270000_test6-1_0"
-    # mass = 1
-    rollout_path = args.rollout_path
-    rollout_filename = args.rollout_filename
-    output_percentile = args.output_percentile
-    output_filename = args.output_filename
+    rollout_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_frictions-sr020/"
+    rollout_filename = "rollout_eval15_0_step6300000"
+    output_percentile = 99.9
+    output_filename = "step6300000_eval15"
     mass = 1
+    # rollout_path = args.rollout_path
+    # rollout_filename = args.rollout_filename
+    # output_percentile = args.output_percentile
+    # output_filename = args.output_filename
+    # mass = 1
 
     # # %% inputs for read rollout.pkl
     # rollout_path = "../gns-data/rollouts/sand-small-r190-bound"
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     dt = rollout_data["metadata"]["dt"]
     g = 9.81 * dt ** 2  # because, in MPM, we used dt=0.0025, and, in GNS, dt=1.0
     critical_time = np.sqrt(height/g)
-    output_critical_timesteps = [0, 1, 1.5, 2, timesteps/critical_time]
+    output_critical_timesteps = [0, 2.5, 4.0, timesteps/critical_time]
     output_timesteps = np.around(np.array(output_critical_timesteps) * critical_time, 0)
     output_timesteps = list(output_timesteps.astype(int))
     output_timesteps[-1] = timesteps - 1  # to comply with the last index of the list
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         ["MPM $E_k/E_0$", "GNS $E_k/E_0$"],
         ["MPM $E_d/E_0$", "GNS $E_d/E_0$"])
     energy_lines = ["solid", "dashed", "dotted"]
-    energy_colors = ["silver", "black"]
+    energy_colors = [["silver", "black"], ["lightcoral", "darkred"], ["lightsteelblue", "darkblue"]]
     energy_p_sets = []
 
     # # color values for velocity contour
@@ -183,47 +183,53 @@ if __name__ == "__main__":
         runout_ax.set_xlabel(r"$t / \tau_{c}$")
         runout_ax.set_ylabel(r"$(L_t - L_0)/L_0$")
         height_ax.set_ylabel(r"$H_t/L_0$")
-        runout_ax.set_xlim(xmin=0, xmax=5)
-        # runout_ax.set_ylim(ymin=0, ymax=1.5)
-        height_ax.set_xlim(xmin=0, xmax=5)
-        height_ax.set_ylim(ymin=0, ymax=1.5)
+        runout_ax.set_xlim(xmin=0, xmax=4)
+        runout_ax.set_ylim(ymin=0, ymax=3.5)
+        height_ax.set_xlim(xmin=0, xmax=4)
+        height_ax.set_ylim(ymin=0, ymax=2.5)
         # legend
-        runout_p_set = p1 + p2
-        runout_p_sets.extend(runout_p_set)
-        runout_labs = [l.get_label() for l in runout_p_sets]
-        runout_ax.legend(ncol=2, loc="middle right", prop={'size': 8})
+        # runout_p_set = p1 + p2
+        # runout_p_sets.extend(runout_p_set)
+        # runout_labs = [l.get_label() for l in runout_p_sets]
+        # runout_ax.legend(ncol=2, loc="middle right", prop={'size': 8})
+        lines, labels = runout_ax.get_legend_handles_labels()
+        lines2, labels2 = height_ax.get_legend_handles_labels()
+        height_ax.legend(lines + lines2, labels + labels2,
+                          ncol=2, loc="lower right", prop={'size': 8})
+
         runout_fig.tight_layout()
         # if i == 1:
         #     runout_fig.show()
         #     # runout_fig.savefig(f"Runout-{rollout_filename}_{percentile}percentile.png")
 
         # plot for energy
-        p3 = energy_ax.plot(normalized_time, normalized_Ep,
-                            color=energy_colors[i],
+        sample_rate = 1
+        p3 = energy_ax.plot(normalized_time[::sample_rate], normalized_Ep[::sample_rate],
+                            color=energy_colors[0][i],
                             linestyle=energy_lines[0],
                             label=energy_legends[0][i])
-        p4 = energy_ax2.plot(normalized_time, normalized_Ek,
-                                  color=energy_colors[i],
+        p4 = energy_ax2.plot(normalized_time[::sample_rate], normalized_Ek[::sample_rate],
+                                  color=energy_colors[1][i],
                                   linestyle=energy_lines[1],
                                   label=energy_legends[1][i])
-        p5 = energy_ax2.plot(normalized_time, normalized_Ed,
-                                  color=energy_colors[i],
+        p5 = energy_ax2.plot(normalized_time[::sample_rate], normalized_Ed[::sample_rate],
+                                  color=energy_colors[2][i],
                                   linestyle=energy_lines[2],
                                   label=energy_legends[2][i])
 
         energy_ax.set_xlabel(r"$t / \tau_{c} $")
         energy_ax.set_ylabel(r"$E_p/E_0$")
-        energy_ax.set_xlim(xmin=0, xmax=5)
+        energy_ax.set_xlim(xmin=0, xmax=4)
         energy_ax.set_ylim(ymin=0)
         energy_p_set = p3 + p4 + p5
         energy_p_sets.extend(energy_p_set)
         energy_ax2.set_ylabel(r"$E_k/E_0$ and $E_d/E_0$")
-        energy_ax2.set_ylim(ymin=0, ymax=0.8)
+        energy_ax2.set_ylim(ymin=0, ymax=0.7)
         # energy_ax2.set_ylim(ymin=0, ymax=0.3)
-        lines, labels = energy_ax.get_legend_handles_labels()
-        lines2, labels2 = energy_ax2.get_legend_handles_labels()
-        energy_ax2.legend(lines + lines2, labels + labels2,
-                          ncol=2, loc=7, prop={'size': 8})
+        # lines, labels = energy_ax.get_legend_handles_labels()
+        # lines2, labels2 = energy_ax2.get_legend_handles_labels()
+        # energy_ax2.legend(lines + lines2, labels + labels2,
+        #                   ncol=3, loc=7, prop={'size': 8})
         # energy_ax.legend(ncol=2, loc="best", prop={'size': 8})
         # energy_ax.legend(ncol=2, loc="best", prop={'size': 8})
         # energy_ax2.legend(ncol=2, loc="best", prop={'size': 8})
@@ -253,8 +259,8 @@ if __name__ == "__main__":
             # trajectory_axs[i, j].set_xlabel("x")
             # trajectory_axs[i, j].set_ylabel("y")
             trajectory_axs[i, j].set_aspect('equal')
-
-    trajectory_fig.colorbar(p, ax=trajectory_axs[:, 3], shrink=0.6)
+    #
+    # trajectory_fig.colorbar(p, ax=trajectory_axs[:, 3], shrink=0.6)
     runout_fig.show()
     runout_fig.savefig(f"{rollout_path}/runout_{output_filename}-{int(output_percentile)}percentile.png")
     # energy_fig.show()
