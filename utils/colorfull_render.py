@@ -9,7 +9,7 @@ from matplotlib.cm import ScalarMappable
 import os
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from error_analysis import get_positions, compute_kinemacis
+from preprocess_rollout_data import get_positions, compute_kinemacis
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 
