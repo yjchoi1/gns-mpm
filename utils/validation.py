@@ -16,11 +16,13 @@ from gns import reading_utils
 from gns import data_loader
 from gns import train
 
-data_name = "sand-small-r300-400step_serial"
+data_name = "sand3d-largesets-r041"
 data_path = f"/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/{data_name}/"
 model_path = f"/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/{data_name}/"
 output_path = f"/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/{data_name}/"
-train_history_loc = f"{model_path}/loss_hist.pkl"
+valid_metadata = f"/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/{data_name}/valid/"
+train_metadata = f"/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/{data_name}/train/"
+# train_history_loc = f"{model_path}/loss_hist.pkl"
 
 batch_size = 1
 INPUT_SEQUENCE_LENGTH = 6
@@ -30,13 +32,13 @@ NUM_PARTICLE_TYPES = 9
 KINEMATIC_PARTICLE_ID = 3
 n_features = 2
 # eval_steps = np.append(np.arange(0, 1000000, 20000), np.arange(1000000, 15000000, 100000))
-eval_steps = np.arange(0, 15000000, 20000)
+eval_steps = np.arange(0, 8500000, 20000)
 nexamples_for_loss = 5
 
 
-def get_loss_history(eval_steps, dataset, nexamples_for_loss):
+def get_loss_history(eval_steps, dataset, nexamples_for_loss, metadata_path):
     # load simulator
-    metadata = reading_utils.read_metadata(data_path)
+    metadata = reading_utils.read_metadata(metadata_path)
     simulator = train._get_simulator(metadata, noise_std, noise_std, device)
 
     with torch.no_grad():
@@ -105,33 +107,35 @@ def get_loss_history(eval_steps, dataset, nexamples_for_loss):
     return loss_history
 
 #
-# ds_train = data_loader.get_data_loader_by_samples(
-#     path=f"{data_path}/train.npz",
-#     input_length_sequence=INPUT_SEQUENCE_LENGTH,
-#     batch_size=batch_size)
-#
-# ds_val = data_loader.get_data_loader_by_samples(
-#     path=f"{data_path}/valid.npz",
-#     input_length_sequence=INPUT_SEQUENCE_LENGTH,
-#     batch_size=batch_size)
-#
-# train_history = get_loss_history(
-#     eval_steps=eval_steps,
-#     dataset=ds_train,
-#     nexamples_for_loss=nexamples_for_loss)
-#
-# valid_history = get_loss_history(
-#     eval_steps=eval_steps,
-#     dataset=ds_val,
-#     nexamples_for_loss=nexamples_for_loss)
-#
-# # Save loss history
-# save_name = f"train_history"
-# with open(f"{output_path}/{save_name}.pkl", 'wb') as f:
-#     pickle.dump(np.transpose(train_history), f)
-# save_name = f"valid_history"
-# with open(f"{output_path}/{save_name}.pkl", 'wb') as f:
-#     pickle.dump(np.transpose(valid_history), f)
+ds_train = data_loader.get_data_loader_by_samples(
+    path=f"{data_path}/train.npz",
+    input_length_sequence=INPUT_SEQUENCE_LENGTH,
+    batch_size=batch_size)
+
+ds_val = data_loader.get_data_loader_by_samples(
+    path=f"{data_path}/valid.npz",
+    input_length_sequence=INPUT_SEQUENCE_LENGTH,
+    batch_size=batch_size)
+
+train_history = get_loss_history(
+    eval_steps=eval_steps,
+    dataset=ds_train,
+    nexamples_for_loss=nexamples_for_loss,
+    metadata_path=train_metadata)
+
+valid_history = get_loss_history(
+    eval_steps=eval_steps,
+    dataset=ds_val,
+    nexamples_for_loss=nexamples_for_loss,
+    metadata_path=valid_metadata)
+
+# Save loss history
+save_name = f"train_history"
+with open(f"{output_path}/{save_name}.pkl", 'wb') as f:
+    pickle.dump(np.transpose(train_history), f)
+save_name = f"valid_history"
+with open(f"{output_path}/{save_name}.pkl", 'wb') as f:
+    pickle.dump(np.transpose(valid_history), f)
 
 # # Load original train history
 # with open(train_history_loc, 'rb') as f:
