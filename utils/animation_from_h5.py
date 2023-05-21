@@ -101,6 +101,10 @@ def from_h5_to_animation():
             ax.set_ylim([float(yboundary[0]), float(yboundary[1])])
             ax.set_zlim([float(zboundary[0]), float(zboundary[1])])
             ax.scatter(positions[i][:, 0], positions[i][:, 1], positions[i][:, 2], s=1)
+            ax.set_box_aspect(
+                aspect=(float(xboundary[1]) - float(xboundary[0]),
+                        float(yboundary[1]) - float(yboundary[0]),
+                        float(zboundary[1]) - float(zboundary[0])))
             ax.view_init(elev=20., azim=i*0.5)
             ax.grid(True, which='both')
 
