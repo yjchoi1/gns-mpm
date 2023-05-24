@@ -38,18 +38,10 @@ class SamplesDataset(torch.utils.data.Dataset):
         start_of_selected_trajectory = self._precompute_cumlengths[trajectory_idx-1] if trajectory_idx != 0 else 0
         time_idx = self._input_length_sequence + (idx - start_of_selected_trajectory)
 
-        # # Prepare training data.
-        # positions = self._data[trajectory_idx][0][time_idx - self._input_length_sequence:time_idx]
-        # positions = np.transpose(positions, (1, 0, 2)) # nparticles, input_sequence_length, dimension
-        # particle_type = np.full(positions.shape[0], self._data[trajectory_idx][1], dtype=int)
-        # n_particles_per_example = positions.shape[0]
-        # label = self._data[trajectory_idx][0][time_idx]
-        # training_example = ((positions, particle_type, n_particles_per_example), label)
-
         # Prepare training data. Assume `input_sequence_length`=1
         positions = self._data[trajectory_idx]["pos"][time_idx - 1]  # (nnode, dimension)
         # positions = np.transpose(positions)
-        n_node_per_example = positions.shape[1]  # (nnode, )
+        n_node_per_example = positions.shape[0]  # (nnode, )
         node_type = self._data[trajectory_idx]["node_type"][time_idx - 1]  # (nnode, 1)
         velocity_feature = self._data[trajectory_idx]["velocity"][time_idx - 1]  # (nnode, dimension)
         velocity_target = self._data[trajectory_idx]["velocity"][time_idx]  # (nnode, dimension)
@@ -99,7 +91,52 @@ def collate_fn(data):
 
     return collated_data
 
+class TrajectoriesDataset(torch.utils.data.Dataset):
+
+    def __init__(self, path):
+        super().__init__()
+        # load dataset stored in npz format.
+        # data consists of dict with keys:
+        # ["pos", "node_type", "velocity", "cells", "pressure"] for all trajectory.
+        # whose shapes are (600, 1876, 2), (600, 1876, 1), (600, 1876, 2), (600, 3518, 3), (600, 1876, 1)
+        # convert to list of tuples
+        self._data = [dict(trj_info.item()) for trj_info in np.load(path, allow_pickle=True).values()]
+
+        # length of each trajectory in the dataset
+        # excluding the input_length_sequence
+        # may (and likely is) variable between data
+        self._dimension = self._data[0]["pos"].shape[-1]
+        self._length = len(self._data)
+        a = 1
+
+    def __len__(self):
+        return self._length
+
+    def __getitem__(self, idx):
+        positions = self._data[idx]["pos"]  # (timesteps, nnode, dims)
+        n_node_per_example = positions.shape[1]  # (nnode, )
+        node_type = self._data[idx]["node_type"]  # (timesteps, nnode, dims)
+        velocity_feature = self._data[idx]["velocity"]  # (timesteps, nnode, dims)
+        pressure = self._data[idx]["pressure"]  # (timesteps, nnode, 1)
+        cells = self._data[idx]["cells"]  # (timesteps, ncell, nnode_per_cell)
+
+        trajectory = (
+            torch.tensor(positions).to(torch.float32).contiguous(),
+            torch.tensor(node_type).contiguous(),
+            torch.tensor(velocity_feature).to(torch.float32).contiguous(),
+            torch.tensor(pressure).to(torch.float32).contiguous(),
+            torch.tensor(cells).to(torch.float32).contiguous(),
+            torch.tensor(n_node_per_example).contiguous(),
+        )
+
+        return trajectory
+
 def get_data_loader_by_samples(path, input_length_sequence, batch_size, shuffle=True):
     dataset = SamplesDataset(path, input_length_sequence)
     return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
                                        pin_memory=True, collate_fn=collate_fn)
+
+def get_data_loader_by_trajectories(path):
+    dataset = TrajectoriesDataset(path)
+    return torch.utils.data.DataLoader(dataset, batch_size=None, shuffle=False,
+                                       pin_memory=True)

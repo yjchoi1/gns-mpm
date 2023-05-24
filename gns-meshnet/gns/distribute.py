@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data.distributed import DistributedSampler
 
-from gns import data_loader
+from gns import mesh_data_loader
 
 def setup(rank, world_size):
     # Initialize group, blocks until all processes join.
@@ -23,7 +23,7 @@ def spawn_train(train_fxn, flags, world_size):
 
 
 def get_data_distributed_dataloader_by_samples(path, input_length_sequence, batch_size, shuffle=True):
-    dataset = data_loader.SamplesDataset(path, input_length_sequence)
+    dataset = mesh_data_loader.SamplesDataset(path, input_length_sequence)
     sampler = DistributedSampler(dataset, shuffle=shuffle)
     return torch.utils.data.DataLoader(dataset=dataset, sampler=sampler, batch_size=batch_size,
-                                       pin_memory=True, collate_fn=data_loader.collate_fn)
+                                       pin_memory=True, collate_fn=mesh_data_loader.collate_fn)
