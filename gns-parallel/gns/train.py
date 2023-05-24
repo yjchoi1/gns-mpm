@@ -5,6 +5,7 @@ import pickle
 import glob
 import re
 import sys
+import time
 
 import numpy as np
 import torch
@@ -29,7 +30,7 @@ flags.DEFINE_string('data_path', None, help='The dataset directory.')
 flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoints of the model.'))
 flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
 flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
@@ -70,7 +71,7 @@ def rollout(
 
   current_positions = initial_positions
   predictions = []
-
+  start_time = time.time()
   for step in range(nsteps):
     # Get next position with shape (nnodes, dim)
     next_position = simulator.predict_positions(
@@ -91,7 +92,8 @@ def rollout(
     # and appending the next position at the end.
     current_positions = torch.cat(
         [current_positions[:, 1:], next_position[:, None, :]], dim=1)
-
+  elapsed_time = time.time() - start_time
+  print(f"Elapsed time for code block 1: {elapsed_time} seconds")
   # Predictions with shape (time, nnodes, dim)
   predictions = torch.stack(predictions)
   ground_truth_positions = ground_truth_positions.permute(1, 0, 2)

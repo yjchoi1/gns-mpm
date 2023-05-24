@@ -2,23 +2,22 @@ import numpy as np
 import json
 
 # Inputs
-bounds = [[0.0-0.0025, 1.0+0.0025],
-          [0.0-0.0025, 1.0+0.0025]]
+bounds = [[-0.020833333333333332, 1.5208333333333333], [-0.2708333332, 0.2708333332], [-0.020833333333333332, 1.0208333333333333]]
 sequence_length = int(380)
-default_connectivity_radius = 0.020
-dim = int(2)
-material_feature_len = int(1)
+default_connectivity_radius = 0.041
+dim = int(3)
+material_feature_len = int(0)
 dt_mpm = 0.0025  # 0.0025
-mpm_cell_size = [1/100, 1/100, 1/100]  # [0.0125, 0.0125]
-nparticles_per_cell = int(2*2)  # int(16)
+mpm_cell_size = [1/12, 1/12, 1/12]  # [0.0125, 0.0125]
+nparticles_per_cell = int(4*4)  # int(16)
 dt_gns = 1.0  # 1.0 is default
 
-mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions/"  # "./mpm"
-data_case = "sand2d_frictions"  # "mpm-9k-train"
-data_tags = [i for i in range(0, 385)]
+mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d/"  # "./mpm"
+data_case = "sand3d_column_collapse"  # "mpm-9k-train"
+data_tags = [i for i in range(8, 16)]
 excluded_data_tags = [83, 144, 148]
 data_tags = [i for i in data_tags if i not in excluded_data_tags]
-save_name = "sand2d_frictions_merged"
+save_name = "sand3d_column_val"
 
 
 trajectories = {}

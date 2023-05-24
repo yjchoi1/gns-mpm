@@ -151,6 +151,10 @@ class Render():
                                         self.trajectory[datacase][i][mask, 1],
                                         self.trajectory[datacase][i][mask, 2], s=point_size, color=color)
                     # rotate viewpoints angle little by little for each timestep
+                    axes[j].set_box_aspect(
+                        aspect=(float(xboundary[1]) - float(xboundary[0]),
+                                float(yboundary[1]) - float(yboundary[0]),
+                                float(zboundary[1]) - float(zboundary[0])))
                     axes[j].view_init(elev=vertical_camera_angle, azim=i * viewpoint_rotation)
                     axes[j].grid(True, which='both')
                     axes[j].set_title(render_datacases[j])

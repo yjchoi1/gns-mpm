@@ -14,7 +14,7 @@ import tree
 from absl import flags
 from absl import app
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append('/work2/08264/baagee/frontera/gns-mpm-dev/gns/')
 from gns import learned_simulator
 from gns import noise_utils
 from gns import reading_utils
@@ -47,16 +47,16 @@ from gns import data_loader
 
 ##### For debug
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
-flags.DEFINE_string('data_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2d_material/', help='The dataset directory.')
-flags.DEFINE_string('model_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2d_material/', help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_material/', help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', "model-814.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', "train_state-814.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
+flags.DEFINE_string('data_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand-small-r300-400step_serial/', help='The dataset directory.')
+flags.DEFINE_string('model_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand-small-r300-400step_serial/', help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand-small-r300-400step_serial/', help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', 'model-10000000.pt', help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', "train_state-1000000.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('rollout_filename', "runtime_test_test5-1", help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
@@ -100,7 +100,9 @@ def rollout(
   current_positions = initial_positions
   predictions = []
 
+  start = time.time()
   for step in range(nsteps):
+    print(f"Rollout step: {step}/{nsteps}")
     # Get next position with shape (nnodes, dim)
     next_position = simulator.predict_positions(
         current_positions,
@@ -126,6 +128,9 @@ def rollout(
   predictions = torch.stack(predictions)
   ground_truth_positions = ground_truth_positions.permute(1, 0, 2)
 
+  end = time.time()
+  print(f"Time for rollout {end - start}s")
+
   loss = (predictions - ground_truth_positions) ** 2
 
   output_dict = {
@@ -133,7 +138,7 @@ def rollout(
       'predicted_rollout': predictions.cpu().numpy(),
       'ground_truth_rollout': ground_truth_positions.cpu().numpy(),
       'particle_types': particle_types.cpu().numpy(),
-      'material_property': material_property.cpu().numpy()
+      'material_property': material_property.cpu().numpy() if material_property is not None else None
   }
 
   return output_dict, loss
@@ -183,7 +188,7 @@ def predict(
       positions = features[0].to(device)
       particle_type = features[1].to(device)
       material_property = features[2].to(device) if material_property_as_feature else None
-      n_particles_per_example = torch.tensor([int(features[3])], dtype=torch.int32).to(device)
+      n_particles_per_example = torch.tensor([int(features[3])], dtype=torch.int32).to(device) if material_property_as_feature else torch.tensor([int(features[2])], dtype=torch.int32).to(device)
 
       # Predict example rollout
       example_rollout, loss = rollout(simulator, positions, particle_type, material_property,
