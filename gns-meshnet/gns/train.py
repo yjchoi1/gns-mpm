@@ -33,18 +33,18 @@ KINEMATIC_PARTICLE_ID = 3
 flags.DEFINE_enum(
     'mode', 'train', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
-flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/meshnet/data/cylinder_flow_npz/", help='The dataset directory.')
-flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/meshnet/save_models/cylinder_flow_npz/", help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/meshnet/save_output/cylinder_flow_npz/", help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', "model-1000.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', "train_state-1000.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/datasets/pipe-npz/", help='The dataset directory.')
+flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/models/pipe-npz/", help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/rollouts/pipe-npz/", help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_integer("cuda_device_number", None, help="CUDA device (zero indexed), default is None so default CUDA device will be used.")
 flags.DEFINE_string('rollout_filename', "rollout", help='Name saving the rollout')
 
 FLAGS = flags.FLAGS
 
 
-batch_size = 20  # TODO: change batch_size when actually do training
+batch_size = 1  # TODO: change batch_size when actually do training
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 transformer = T.Compose([T.FaceToEdge(), T.Cartesian(norm=False), T.Distance(norm=False)])
 noise_std = 2e-2
@@ -55,7 +55,7 @@ lr_init = 1e-4
 lr_decay = 1.0
 lr_decay_steps = 5e6
 ntraining_steps = 1e6
-nsave_steps = 1000
+nsave_steps = 2000
 print_steps = 10
 
 
@@ -225,8 +225,8 @@ def train(simulator):
     simulator.train()
     simulator.to(device)
 
-    # LOAD DATASET
-    ds = mesh_data_loader.get_data_loader_by_samples(path=f'{FLAGS.data_path}test.npz',
+    # LOAD DATASET, TODO: change `.npz` name
+    ds = mesh_data_loader.get_data_loader_by_samples(path=f'{FLAGS.data_path}/test.npz',
                                                      input_length_sequence=INPUT_SEQUENCE_LENGTH,
                                                      batch_size=batch_size)
     not_reached_nsteps = True
