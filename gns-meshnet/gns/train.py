@@ -31,20 +31,20 @@ KINEMATIC_PARTICLE_ID = 3
 # data_path = "/work2/08264/baagee/frontera/meshnet/data/cylinder_flow_npz/"
 # model_path = "/work2/08264/baagee/frontera/meshnet/save_models/cylinder_flow_npz/"
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/datasets/pipe-npz/", help='The dataset directory.')
 flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/models/pipe-npz/", help=('The path for saving checkpoints of the model.'))
 flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/rollouts/pipe-npz/", help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('model_file', "model-270000.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', "train_state-270000.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_integer("cuda_device_number", None, help="CUDA device (zero indexed), default is None so default CUDA device will be used.")
 flags.DEFINE_string('rollout_filename', "rollout", help='Name saving the rollout')
 
 FLAGS = flags.FLAGS
 
 
-batch_size = 1  # TODO: change batch_size when actually do training
+batch_size = 20  # TODO: change batch_size when actually do training
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 transformer = T.Compose([T.FaceToEdge(), T.Cartesian(norm=False), T.Distance(norm=False)])
 noise_std = 2e-2
@@ -226,21 +226,22 @@ def train(simulator):
     simulator.to(device)
 
     # LOAD DATASET, TODO: change `.npz` name
-    ds = mesh_data_loader.get_data_loader_by_samples(path=f'{FLAGS.data_path}/test.npz',
+    ds = mesh_data_loader.get_data_loader_by_samples(path=f'{FLAGS.data_path}/{FLAGS.mode}.npz',
                                                      input_length_sequence=INPUT_SEQUENCE_LENGTH,
+                                                     dt=dt,
                                                      batch_size=batch_size)
     not_reached_nsteps = True
 
     try:
         while not_reached_nsteps:
-            for i, example in enumerate(ds):
+            for i, graph in enumerate(ds):
                 # (positions, node_type, velocity_feature, pressure, cells, time_idx_vector, n_node_per_example),
                 # velocity_target)
 
-                # make graph
-                graph = datas_to_graph(example, dt=dt, device=device)
+                # # make graph
+                # graph = datas_to_graph(graph, dt=dt, device=device)
                 # Represent graph using edge_index and make edge_feature to be using [relative_distance, norm]
-                graph = transformer(graph)
+                graph = transformer(graph.to(device))
 
                 # get inputs
                 node_types = graph.x[:, 0]

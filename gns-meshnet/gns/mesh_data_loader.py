@@ -1,9 +1,11 @@
 import torch
 import numpy as np
+import torch_geometric
+from torch_geometric.data import Data
 
 class SamplesDataset(torch.utils.data.Dataset):
 
-    def __init__(self, path, input_length_sequence):
+    def __init__(self, path, input_length_sequence, dt):
         super().__init__()
         # load dataset stored in npz format.
         # data consists of dict with keys:
@@ -17,6 +19,7 @@ class SamplesDataset(torch.utils.data.Dataset):
         # may (and likely is) variable between data
         self._dimension = self._data[0]["pos"].shape[-1]
         self._input_length_sequence = input_length_sequence
+        self._dt = dt
         self._data_lengths = [x["pos"].shape[0] - input_length_sequence for x in self._data]
         self._length = sum(self._data_lengths)
 
@@ -47,49 +50,27 @@ class SamplesDataset(torch.utils.data.Dataset):
         velocity_target = self._data[trajectory_idx]["velocity"][time_idx]  # (nnode, dimension)
         pressure = self._data[trajectory_idx]["pressure"][time_idx - 1]  # (nnode, 1)
         cells = self._data[trajectory_idx]["cells"][time_idx - 1]  # (ncells, nnode_per_cell)
+        cells = np.transpose(cells, (1, 0))
         time_idx_vector = np.full(positions.shape[0], time_idx)  # (nnode, )
+        time_vector = time_idx_vector * self._dt  # (nnodes, )
+        time_vector = np.reshape(time_vector, (time_vector.size, 1))  # (nnodes, 1)
 
-        training_example = (
-            (positions, node_type, velocity_feature, pressure, cells, time_idx_vector, n_node_per_example),
-            velocity_target
+        # aggregate node features
+        node_features = torch.hstack(
+            (torch.tensor(node_type).contiguous(),
+             torch.tensor(velocity_feature).to(torch.float32).contiguous(),
+             torch.tensor(pressure).to(torch.float32).contiguous(),
+             torch.tensor(time_vector).to(torch.float32).contiguous())
         )
 
-        return training_example
+        # make graph
+        graph = Data(x=node_features,
+                     face=torch.tensor(cells).type(torch.LongTensor).contiguous(),
+                     y=torch.tensor(velocity_target).to(torch.float32).contiguous(),
+                     pos=torch.tensor(positions).to(torch.float32).contiguous())
 
-def collate_fn(data):
-    position_list = []
-    node_type_list = []
-    velocity_feature_list = []
-    pressure_list = []
-    cell_list_list = []
-    time_idx_vector_list = []
-    n_node_per_example_list = []
-    velocity_target_list = []
+        return graph
 
-    for (feature, label) in data:
-        position_list.append(feature[0])  # (nnode, input_sequence_length, dimension)
-        node_type_list.append(feature[1])  # (nnode, )
-        velocity_feature_list.append(feature[2])  # (
-        pressure_list.append(feature[3])
-        cell_list_list.append(feature[4])
-        time_idx_vector_list.append(feature[5])
-        n_node_per_example_list.append(feature[6])
-        velocity_target_list.append(label)
-
-    collated_data = (
-        (
-            torch.tensor(np.concatenate(position_list)).to(torch.float32).contiguous(),
-            torch.tensor(np.concatenate(node_type_list)).contiguous(),
-            torch.tensor(np.concatenate(velocity_feature_list)).to(torch.float32).contiguous(),
-            torch.tensor(np.concatenate(pressure_list)).to(torch.float32).contiguous(),
-            torch.tensor(np.concatenate(cell_list_list)).contiguous(),
-            torch.tensor(np.concatenate(time_idx_vector_list)).to(torch.float32).contiguous(),
-            torch.tensor(n_node_per_example_list).contiguous(),
-        ),
-        torch.tensor(np.concatenate(velocity_target_list)).to(torch.float32).contiguous(),
-    )
-
-    return collated_data
 
 class TrajectoriesDataset(torch.utils.data.Dataset):
 
@@ -131,10 +112,9 @@ class TrajectoriesDataset(torch.utils.data.Dataset):
 
         return trajectory
 
-def get_data_loader_by_samples(path, input_length_sequence, batch_size, shuffle=True):
-    dataset = SamplesDataset(path, input_length_sequence)
-    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
-                                       pin_memory=True, collate_fn=collate_fn)
+def get_data_loader_by_samples(path, input_length_sequence, dt, batch_size, shuffle=True):
+    dataset = SamplesDataset(path, input_length_sequence, dt)
+    return torch_geometric.loader.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
 def get_data_loader_by_trajectories(path):
     dataset = TrajectoriesDataset(path)
