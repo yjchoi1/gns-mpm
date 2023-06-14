@@ -24,39 +24,34 @@ from utils.utils import NodeType
 from utils.utils import optimizer_to
 
 
-INPUT_SEQUENCE_LENGTH = 1
-NUM_PARTICLE_TYPES = 9
-KINEMATIC_PARTICLE_ID = 3
-
-# data_path = "/work2/08264/baagee/frontera/meshnet/data/cylinder_flow_npz/"
-# model_path = "/work2/08264/baagee/frontera/meshnet/save_models/cylinder_flow_npz/"
 flags.DEFINE_enum(
     'mode', 'train', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
+flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/datasets/pipe-npz/", help='The dataset directory.')
 flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/models/pipe-npz/", help=('The path for saving checkpoints of the model.'))
 flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/rollouts/pipe-npz/", help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', "latest", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', "latest", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_integer("cuda_device_number", None, help="CUDA device (zero indexed), default is None so default CUDA device will be used.")
 flags.DEFINE_string('rollout_filename', "rollout", help='Name saving the rollout')
-
+flags.DEFINE_integer('ntraining_steps', int(1E7), help='Number of training steps.')
+flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
 FLAGS = flags.FLAGS
 
 
-batch_size = 20  # TODO: change batch_size when actually do training
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-transformer = T.Compose([T.FaceToEdge(), T.Cartesian(norm=False), T.Distance(norm=False)])
+INPUT_SEQUENCE_LENGTH = 0
 noise_std = 2e-2
 node_type_embedding_size = 9
 dt = 0.01
-
 lr_init = 1e-4
-lr_decay = 1.0
+lr_decay_rate = 0.1
 lr_decay_steps = 5e6
-ntraining_steps = 1e6
-nsave_steps = 2000
-print_steps = 10
+loss_report_step = 10
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# an instance that transforms face-based graph to edge-based graph. Edge features are auto-computed using "Cartesian" and "Distance"
+transformer = T.Compose([T.FaceToEdge(), T.Cartesian(norm=False), T.Distance(norm=False)])
 
 
 def predict(simulator: mesh_simulator.MeshSimulator,
@@ -78,16 +73,15 @@ def predict(simulator: mesh_simulator.MeshSimulator,
     # Use `valid`` set for eval mode if not use `test`
     split = 'test' if FLAGS.mode == 'rollout' else 'valid'
 
-    # load trajectory data.
+    # Load trajectory data.
     ds = mesh_data_loader.get_data_loader_by_trajectories(path=f"{FLAGS.data_path}{split}.npz")
 
-    # eval_loss = []
+    # Rollout
     with torch.no_grad():
         for i, features in enumerate(ds):
             nsteps = len(features[0]) - INPUT_SEQUENCE_LENGTH
             prediction_data = rollout(simulator, features, nsteps, device)
             print(f"Rollout for example{i}: loss = {prediction_data['mean_loss']}")
-            # eval_loss.append(prediction_data['mean_loss'])
 
             # Save rollout in testing
             if FLAGS.mode == 'rollout':
@@ -97,7 +91,6 @@ def predict(simulator: mesh_simulator.MeshSimulator,
                     pickle.dump(prediction_data, f)
 
     print(f"Mean loss on rollout prediction: {prediction_data['mean_loss']}")
-    a = 1
 
 def rollout(simulator: mesh_simulator.MeshSimulator,
             features,
@@ -118,10 +111,9 @@ def rollout(simulator: mesh_simulator.MeshSimulator,
     mask = None
 
     for step in tqdm(range(nsteps), total=nsteps):
-        # predict next velocity
-        # print(f"Rollout step: {step}/{nsteps}")
 
-        # obtain data to form a graph
+        # Predict next velocity
+        # First, obtain data to form a graph
         current_node_coords = node_coords[step]
         current_node_type = node_types[step]
         current_pressure = pressures[step]
@@ -132,12 +124,12 @@ def rollout(simulator: mesh_simulator.MeshSimulator,
             (current_node_coords, current_node_type, current_velocities, current_pressure, current_cell, current_time_idx_vector),
             next_ground_truth_velocities)
 
-        # make graph
+        # Make graph
         graph = datas_to_graph(current_example, dt=dt, device=device)
         # Represent graph using edge_index and make edge_feature to be using [relative_distance, norm]
         graph = transformer(graph)
 
-
+        # Predict next velocity
         predicted_next_velocity = simulator.predict_velocity(
             current_velocities=graph.x[:, 1:3],
             node_type=graph.x[:, 0],
@@ -145,7 +137,7 @@ def rollout(simulator: mesh_simulator.MeshSimulator,
             edge_features=graph.edge_attr)
 
         # Apply mask.
-        if mask is None:  # only compute mask for the first timestep, since it will be the rest of timesteps
+        if mask is None:  # only compute mask for the first timestep, since it will be the same for the later timesteps
             mask = torch.logical_or(current_node_type == NodeType.NORMAL, current_node_type == NodeType.OUTFLOW)
             mask = torch.logical_not(mask)
             mask = mask.squeeze(1)
@@ -174,16 +166,15 @@ def rollout(simulator: mesh_simulator.MeshSimulator,
     return output_dict
 
 
-
 def train(simulator):
 
     print(f"device = {device}")
 
-    ## INITIATE TRAINING
+    # Initiate training.
     optimizer = torch.optim.Adam(simulator.parameters(), lr=lr_init)
     step = 0
 
-    ## SET MODEL AND SAVE PATH & LOAD MODEL
+    # Set model and its path to save, and load model.
     # If model_path does not exist create new directory and begin training.
     model_path = FLAGS.model_path
     if not os.path.exists(model_path):
@@ -221,37 +212,33 @@ def train(simulator):
             raise FileNotFoundError(
                 f"Specified model_file {model_path + FLAGS.model_file} and train_state_file {model_path + FLAGS.train_state_file} not found.")
 
-
     simulator.train()
     simulator.to(device)
 
-    # LOAD DATASET, TODO: change `.npz` name
+    # Load data
     ds = mesh_data_loader.get_data_loader_by_samples(path=f'{FLAGS.data_path}/{FLAGS.mode}.npz',
                                                      input_length_sequence=INPUT_SEQUENCE_LENGTH,
                                                      dt=dt,
-                                                     batch_size=batch_size)
-    not_reached_nsteps = True
+                                                     batch_size=FLAGS.batch_size)
 
+    not_reached_nsteps = True
     try:
         while not_reached_nsteps:
             for i, graph in enumerate(ds):
-                # (positions, node_type, velocity_feature, pressure, cells, time_idx_vector, n_node_per_example),
-                # velocity_target)
-
-                # # make graph
-                # graph = datas_to_graph(graph, dt=dt, device=device)
                 # Represent graph using edge_index and make edge_feature to be using [relative_distance, norm]
                 graph = transformer(graph.to(device))
 
-                # get inputs
+                # Get inputs
                 node_types = graph.x[:, 0]
                 current_velocities = graph.x[:, 1:3]
                 edge_index = graph.edge_index
                 edge_features = graph.edge_attr
                 target_velocities = graph.y
 
+                # Get velocity noise
                 velocity_noise = get_velocity_noise(graph, noise_std=noise_std, device=device)
 
+                # Predict dynamics
                 pred_acc, target_acc = simulator.predict_acceleration(
                     current_velocities=current_velocities,
                     node_type=node_types,
@@ -260,9 +247,9 @@ def train(simulator):
                     target_velocities=target_velocities,
                     velocity_noise=velocity_noise)
 
-                # compute loss
+                # Compute loss
                 mask = torch.logical_or(node_types == NodeType.NORMAL, node_types == NodeType.OUTFLOW)
-                errors = ((pred_acc - target_acc)**2)[mask]
+                errors = ((pred_acc - target_acc)**2)[mask]  # only compute errors if node_types is NORMAL or OUTFLOW
                 loss = torch.mean(errors)
 
                 # Computes the gradient of loss
@@ -271,21 +258,25 @@ def train(simulator):
                 optimizer.step()
 
                 # Update learning rate
-                lr_new = lr_init * (lr_decay ** (step / lr_decay_steps))
+                lr_new = lr_init * lr_decay_rate ** (step / lr_decay_steps) + 1e-6
                 for param in optimizer.param_groups:
                     param['lr'] = lr_new
 
-                if step % print_steps == 0:
-                    print(f"Training step: {step}/{ntraining_steps}. Loss: {loss}.")
+                if step % loss_report_step == 0:
+                    print(f"Training step: {step}/{FLAGS.ntraining_steps}. Loss: {loss}.")
 
                 # Save model state
-                if step % nsave_steps == 0:
+                if step % FLAGS.nsave_steps == 0:
+                    # save state_dict
+                    # save_data = {'model': model (=state_dict),
+                    #              '_output_normalizer': _output_normalizer,
+                    #              '_node_normalizer': _node_normalizer}
                     simulator.save(model_path + 'model-' + str(step) + '.pt')
                     train_state = dict(optimizer_state=optimizer.state_dict(), global_train_state={"step": step})
                     torch.save(train_state, f"{model_path}train_state-{step}.pt")
 
                 # Complete training
-                if (step >= ntraining_steps):
+                if (step >= FLAGS.ntraining_steps):
                     not_reached_nsteps = False
                     break
 
@@ -308,12 +299,13 @@ def main(_):
         nnode_in=11,
         nedge_in=3,
         latent_dim=128,
-        nmessage_passing_steps=10,
+        nmessage_passing_steps=15,
         nmlp_layers=2,
         mlp_hidden_dim=128,
         nnode_types=3,
         node_type_embedding_size=9,
         device=device)
+
     if FLAGS.mode == 'train':
         train(simulator)
     elif FLAGS.mode in ['valid', 'rollout']:

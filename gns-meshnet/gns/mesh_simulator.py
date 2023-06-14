@@ -28,9 +28,7 @@ class MeshSimulator(nn.Module):
           latent_dim: Size of latent dimension (128)
           nmessage_passing_steps: Number of message passing steps.
           nmlp_layers: Number of hidden layers in the MLP (typically of size 2).
-          boundaries: Array of 2-tuples, containing the lower and upper boundaries
-            of the cuboid containing the particles along each dimensions, matching
-            the dimensionality of the problem.
+          mlp_hidden_dim: Dimension of hidden layers in the MLP 128.
           nnode_types: Number of different particle types.
           node_type_embedding_size: Embedding size for the particle type.
           device: Runtime device (cuda or cpu).
@@ -50,8 +48,10 @@ class MeshSimulator(nn.Module):
             nmlp_layers=nmlp_layers,
             mlp_hidden_dim=mlp_hidden_dim)
 
-        self._output_normalizer = normalization.Normalizer(size=2, name='output_normalizer', device=device)  # TODO: what is the size for?
-        self._node_normalizer = normalization.Normalizer(size=nnode_in, name='node_normalizer', device=device)
+        self._output_normalizer = normalization.Normalizer(
+            size=simulation_dimensions, name='output_normalizer', device=device)
+        self._node_normalizer = normalization.Normalizer(
+            size=nnode_in, name='node_normalizer', device=device)
         self._device = device
 
     def forward(self):
@@ -60,16 +60,21 @@ class MeshSimulator(nn.Module):
 
 
     def _encoder_preprocessor(self,
-                              current_velocities,
-                              node_type,
+                              current_velocities: torch.tensor,
+                              node_type: torch.tensor,
                               velocity_noise: torch.tensor):
         """
-        Take current velocity (nnodes, dims) and node type (nnodes, 1),
-        impose velocity noise, convert integer node_type to onehot embedding node_type,
-        concatenate as node_features and normalize it.
+        Take `current_velocity` (nnodes, dims) and node type (nnodes, 1),
+        impose `velocity_noise`, convert integer `node_type` to onehot embedding `node_type`,
+        concatenate as `node_features` and normalize it.
+
+        Args:
+            current_velocities: current velocity at nodes (nnodes, dims)
+            node_type: node_types (nnodes, )
+            velocity_noise: velocity noise (nnodes, dims)
 
         Returns:
-        processed_node_features (noised + normalized)
+            processed_node_features (i.e., noised & normalized)
         """
 
         # node feature
@@ -101,6 +106,20 @@ class MeshSimulator(nn.Module):
             edge_features,
             target_velocities,
             velocity_noise):
+        """
+        Predict acceleration using current features
+
+        Args:
+            current_velocities: current velocity at nodes (nnodes, dims)
+            node_type: node_types (nnodes, )
+            edge_index: index describing edge connectivity between nodes (2, nedges)
+            edge_features: [relative_distance, norm] (nedges, 3)
+            target_velocities: ground truth velocity at next timestep
+            velocity_noise: velocity noise (nnodes, dims)
+
+        Returns:
+            predicted_normalized_accelerations, target_normalized_accelerations
+        """
 
         # prepare node features, edge features, get connectivity
         processed_node_features = self._encoder_preprocessor(
@@ -124,6 +143,15 @@ class MeshSimulator(nn.Module):
                          node_type,
                          edge_index,
                          edge_features):
+        """
+        Predict velocity using current features when rollout
+
+        Args:
+            current_velocities: current velocity at nodes (nnodes, dims)
+            node_type: node_types (nnodes, )
+            edge_index: index describing edge connectivity between nodes (2, nedges)
+            edge_features: [relative_distance, norm] (nedges, 3)
+        """
 
         # prepare node features, edge features, get connectivity
         processed_node_features = self._encoder_preprocessor(
@@ -140,18 +168,6 @@ class MeshSimulator(nn.Module):
         predicted_velocity = current_velocities + predicted_accelerations
 
         return predicted_velocity
-
-    # TODO: remove this function later if unnecessary.
-    def _decoder_postprocessor(
-            self,
-            predicted_normalized_accelerations,
-            current_velocities):
-
-        # TODO: input velocities are without noise
-        predicted_accelerations = self._output_normalizer.inverse(predicted_normalized_accelerations)
-        predicted_velocities = current_velocities + predicted_accelerations
-
-        return predicted_velocities
 
     def save(self, path=None):
 

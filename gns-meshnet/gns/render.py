@@ -1,43 +1,80 @@
 import pickle
+from absl import app
+from absl import flags
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.tri as tri
-from tqdm import tqdm
-import glob
-import os
-
-rollout_path = "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/rollouts/pipe-npz/"
-result_filename = "rollout_0.pkl"
-result_path = f"{rollout_path}/{result_filename}"
-
-with open(result_path, 'rb') as f:
-    result = pickle.load(f)
-
-# color
-vmin = result["predicted_rollout"][0][:, 0].min()
-vmax = result["predicted_rollout"][0][:, 0].max()
-triang = tri.Triangulation(result["node_coords"][0][:, 0], result["node_coords"][0][:, 1])
+from mpl_toolkits.axes_grid1 import ImageGrid
+from matplotlib import animation
 
 
-skip = 100
+flags.DEFINE_string("rollout_dir", "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/rollouts/pipe-npz/", help="Directory where rollout.pkl are located")
+flags.DEFINE_string("rollout_name", "rollout_24", help="Name of rollout `.pkl` file")
+flags.DEFINE_integer("step_stride", 5, help="Stride of steps to skip.")
+FLAGS = flags.FLAGS
 
-for i, (pred_vel, target_vel) in enumerate(zip(result["predicted_rollout"], result["ground_truth_rollout"])):
+def render_gif_animation():
 
-    if i % skip == 0:
-        print(i)
-        fig, axes = plt.subplots(2, 1, figsize=(17, 8))
+    rollout_path = f"{FLAGS.rollout_dir}/{FLAGS.rollout_name}.pkl"
+    animation_filename = f"{FLAGS.rollout_dir}/{FLAGS.rollout_name}.gif"
 
-        target_vel_mag = np.linalg.norm(target_vel, axis=-1)
-        predicted_vel_mag = np.linalg.norm(pred_vel, axis=-1)
+    # read rollout data
+    with open(rollout_path, 'rb') as f:
+        result = pickle.load(f)
+    ground_truth_vel = np.concatenate((result["initial_velocities"], result["ground_truth_rollout"]))
+    predicted_vel = np.concatenate((result["initial_velocities"], result["predicted_rollout"]))
 
-        for ax in axes:
-            ax.triplot(triang, 'o-', color='k', ms=0.5, lw=0.3)
+    # compute velocity magnitude
+    ground_truth_vel_magnitude = np.linalg.norm(ground_truth_vel, axis=-1)
+    predicted_vel_magnitude = np.linalg.norm(predicted_vel, axis=-1)
+    velocity_result = {
+        "ground_truth": ground_truth_vel_magnitude,
+        "prediction": predicted_vel_magnitude
+    }
 
-        handle1 = axes[0].tripcolor(triang, target_vel_mag, vmax=vmax, vmin=vmin)
-        axes[1].tripcolor(triang, predicted_vel_mag, vmax=vmax, vmin=vmin)
-        plt.show()
-    else:
-        pass
+    # variables for render
+    n_timesteps = len(ground_truth_vel_magnitude)
+    triang = tri.Triangulation(result["node_coords"][0][:, 0], result["node_coords"][0][:, 1])
+
+    # color
+    vmin = np.concatenate(
+        (result["predicted_rollout"][0][:, 0], result["ground_truth_rollout"][0][:, 0])).min()
+    vmax = np.concatenate(
+        (result["predicted_rollout"][0][:, 0], result["ground_truth_rollout"][0][:, 0])).max()
+
+    # Init figures
+    fig = plt.figure(figsize=(9.75, 3))
+
+    def animate(i):
+        print(f"Render step {i}/{n_timesteps}")
+
+        fig.clear()
+        grid = ImageGrid(fig, 111,
+                         nrows_ncols=(2, 1),
+                         axes_pad=0.3,
+                         share_all=True,
+                         cbar_location="right",
+                         cbar_mode="single",
+                         cbar_size="1.5%",
+                         cbar_pad=0.15)
+
+        for j, (sim, vel) in enumerate(velocity_result.items()):
+            grid[j].triplot(triang, 'o-', color='k', ms=0.5, lw=0.3)
+            handle = grid[j].tripcolor(triang, vel[i], vmax=vmax, vmin=vmin)
+            fig.colorbar(handle, cax=grid.cbar_axes[0])
+            grid[j].set_title(sim)
+
+    # Creat animation
+    ani = animation.FuncAnimation(
+        fig, animate, frames=np.arange(0, n_timesteps, FLAGS.step_stride), interval=500)
+
+    ani.save(f'{animation_filename}', dpi=100, fps=30, writer='imagemagick')
+    print(f"Animation saved to: {animation_filename}")
 
 
+def main(_):
+    render_gif_animation()
 
+
+if __name__ == '__main__':
+    app.run(main)
