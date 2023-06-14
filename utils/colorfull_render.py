@@ -48,7 +48,7 @@ for tag in rollout_tags:
         rollout_filenames.append(rollout_filename)
 
 # get data
-trajectories, metadata = get_positions(data_path, rollout_filenames)
+trajectories, metadata = get_positions(data_path, rollout_filenames, mpm_dt=mpm_dt)
 kinematics_info = compute_kinemacis(trajectories)
 
 
