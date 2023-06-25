@@ -9,7 +9,7 @@ from matplotlib import animation
 
 
 flags.DEFINE_string("rollout_dir", "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/rollouts/pipe-npz/", help="Directory where rollout.pkl are located")
-flags.DEFINE_string("rollout_name", "rollout_24", help="Name of rollout `.pkl` file")
+flags.DEFINE_string("rollout_name", "rollout_2", help="Name of rollout `.pkl` file")
 flags.DEFINE_integer("step_stride", 5, help="Stride of steps to skip.")
 FLAGS = flags.FLAGS
 
@@ -43,7 +43,7 @@ def render_gif_animation():
         (result["predicted_rollout"][0][:, 0], result["ground_truth_rollout"][0][:, 0])).max()
 
     # Init figures
-    fig = plt.figure(figsize=(9.75, 3))
+    fig = plt.figure(figsize=(7, 4))
 
     def animate(i):
         print(f"Render step {i}/{n_timesteps}")
@@ -59,16 +59,16 @@ def render_gif_animation():
                          cbar_pad=0.15)
 
         for j, (sim, vel) in enumerate(velocity_result.items()):
-            grid[j].triplot(triang, 'o-', color='k', ms=0.5, lw=0.3)
             handle = grid[j].tripcolor(triang, vel[i], vmax=vmax, vmin=vmin)
-            fig.colorbar(handle, cax=grid.cbar_axes[0])
+            grid[j].triplot(triang, 'k-', lw=0.1)
+            fig.colorbar(handle, cax=grid.cbar_axes[0], label="Velocity (m/s)")
             grid[j].set_title(sim)
 
     # Creat animation
     ani = animation.FuncAnimation(
         fig, animate, frames=np.arange(0, n_timesteps, FLAGS.step_stride), interval=500)
 
-    ani.save(f'{animation_filename}', dpi=100, fps=30, writer='imagemagick')
+    ani.save(f'{animation_filename}', dpi=100, fps=10, writer='imagemagick')
     print(f"Animation saved to: {animation_filename}")
 
 

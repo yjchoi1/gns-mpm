@@ -25,14 +25,14 @@ from utils.utils import optimizer_to
 
 
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/datasets/pipe-npz/", help='The dataset directory.')
 flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/models/pipe-npz/", help=('The path for saving checkpoints of the model.'))
 flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/rollouts/pipe-npz/", help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('model_file', "model-10000000.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', "train_state-10000000.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_integer("cuda_device_number", None, help="CUDA device (zero indexed), default is None so default CUDA device will be used.")
 flags.DEFINE_string('rollout_filename', "rollout", help='Name saving the rollout')
 flags.DEFINE_integer('ntraining_steps', int(1E7), help='Number of training steps.')
@@ -40,7 +40,7 @@ flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to
 FLAGS = flags.FLAGS
 
 
-INPUT_SEQUENCE_LENGTH = 0
+INPUT_SEQUENCE_LENGTH = 1
 noise_std = 2e-2
 node_type_embedding_size = 9
 dt = 0.01
@@ -141,9 +141,9 @@ def rollout(simulator: mesh_simulator.MeshSimulator,
             mask = torch.logical_or(current_node_type == NodeType.NORMAL, current_node_type == NodeType.OUTFLOW)
             mask = torch.logical_not(mask)
             mask = mask.squeeze(1)
-            # Maintain previous velocity if node_type is not (Normal or Outflow).
-            # i.e., only update normal or outflow nodes.
-            predicted_next_velocity[mask] = next_ground_truth_velocities[mask]
+        # Maintain previous velocity if node_type is not (Normal or Outflow).
+        # i.e., only update normal or outflow nodes.
+        predicted_next_velocity[mask] = next_ground_truth_velocities[mask]
         predictions.append(predicted_next_velocity)
 
         # Update current position for the next prediction
