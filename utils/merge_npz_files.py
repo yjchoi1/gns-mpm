@@ -1,23 +1,24 @@
 import numpy as np
 import json
+from tqdm import tqdm
 
 # Inputs
-bounds = [[-0.020833333333333332, 1.5208333333333333], [-0.2708333332, 0.2708333332], [-0.020833333333333332, 1.0208333333333333]]
-sequence_length = int(380)
-default_connectivity_radius = 0.041
+bounds = [[0.2, 0.8], [0.2, 0.8], [0.2, 0.8]]
+sequence_length = int(350)
+default_connectivity_radius = 0.025
 dim = int(3)
 material_feature_len = int(0)
 dt_mpm = 0.0025  # 0.0025
-mpm_cell_size = [1/12, 1/12, 1/12]  # [0.0125, 0.0125]
-nparticles_per_cell = int(4*4)  # int(16)
+mpm_cell_size = [None, None, None]  # [0.0125, 0.0125]
+nparticles_per_cell = None  # int(16)
 dt_gns = 1.0  # 1.0 is default
 
-mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d/"  # "./mpm"
-data_case = "sand3d_column_collapse"  # "mpm-9k-train"
-data_tags = [i for i in range(8, 16)]
-excluded_data_tags = [83, 144, 148]
+mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d_collision/"  # "./mpm"
+data_case = "trajectory"  # "mpm-9k-train"
+data_tags = [i for i in range(0, 3)]
+excluded_data_tags = []
 data_tags = [i for i in data_tags if i not in excluded_data_tags]
-save_name = "sand3d_column_val"
+save_name = "sand3d_collisions_train"
 
 
 trajectories = {}
@@ -34,10 +35,10 @@ aggregated_velocities = []
 aggregated_accelerations = []
 data_names = []
 
-for id in data_tags:
+for id in tqdm(data_tags, total=len(data_tags)):
     data_name = f"{data_case}{id}"
     data_names.append(data_name)
-    npz_path = f"{mpm_dir}/{data_name}/{data_name}.npz"  # f"{mpm_dir}/{data_name}/{data_name}.npz"
+    npz_path = f"{mpm_dir}/{data_name}.npz"  # f"{mpm_dir}/{data_name}/{data_name}.npz"
     data = np.load(npz_path, allow_pickle=True)
     for simulation_id, trajectory in data.items():
         trajectories[f"simulation_trajectory_{id}"] = (trajectory)
@@ -74,29 +75,29 @@ concat_accelerations = np.concatenate(aggregated_accelerations)
 # Compute statistics
 if dim == 2:
     statistics = {
-        "mean_velocity_x": np.mean(concat_velocities[:, 0]),
-        "mean_velocity_y": np.mean(concat_velocities[:, 1]),
-        "std_velocity_x": np.std(concat_velocities[:, 0]),
-        "std_velocity_y": np.std(concat_velocities[:, 1]),
-        "mean_accel_x": np.mean(concat_accelerations[:, 0]),
-        "mean_accel_y": np.mean(concat_accelerations[:, 1]),
-        "std_accel_x": np.std(concat_accelerations[:, 0]),
-        "std_accel_y": np.std(concat_accelerations[:, 1])
+        "mean_velocity_x": float(np.mean(concat_velocities[:, 0])),
+        "mean_velocity_y": float(np.mean(concat_velocities[:, 1])),
+        "std_velocity_x": float(np.std(concat_velocities[:, 0])),
+        "std_velocity_y": float(np.std(concat_velocities[:, 1])),
+        "mean_accel_x": float(np.mean(concat_accelerations[:, 0])),
+        "mean_accel_y": float(np.mean(concat_accelerations[:, 1])),
+        "std_accel_x": float(np.std(concat_accelerations[:, 0])),
+        "std_accel_y": float(np.std(concat_accelerations[:, 1]))
     }
 if dim == 3:
     statistics = {
-        "mean_velocity_x": np.mean(concat_velocities[:, 0]),
-        "mean_velocity_y": np.mean(concat_velocities[:, 1]),
-        "mean_velocity_z": np.mean(concat_velocities[:, 2]),
-        "std_velocity_x": np.std(concat_velocities[:, 0]),
-        "std_velocity_y": np.std(concat_velocities[:, 1]),
-        "std_velocity_z": np.std(concat_velocities[:, 2]),
-        "mean_accel_x": np.mean(concat_accelerations[:, 0]),
-        "mean_accel_y": np.mean(concat_accelerations[:, 1]),
-        "mean_accel_z": np.mean(concat_accelerations[:, 2]),
-        "std_accel_x": np.std(concat_accelerations[:, 0]),
-        "std_accel_y": np.std(concat_accelerations[:, 1]),
-        "std_accel_z": np.std(concat_accelerations[:, 2])
+        "mean_velocity_x": float(np.mean(concat_velocities[:, 0])),
+        "mean_velocity_y": float(np.mean(concat_velocities[:, 1])),
+        "mean_velocity_z": float(np.mean(concat_velocities[:, 2])),
+        "std_velocity_x": float(np.std(concat_velocities[:, 0])),
+        "std_velocity_y": float(np.std(concat_velocities[:, 1])),
+        "std_velocity_z": float(np.std(concat_velocities[:, 2])),
+        "mean_accel_x": float(np.mean(concat_accelerations[:, 0])),
+        "mean_accel_y": float(np.mean(concat_accelerations[:, 1])),
+        "mean_accel_z": float(np.mean(concat_accelerations[:, 2])),
+        "std_accel_x": float(np.std(concat_accelerations[:, 0])),
+        "std_accel_y": float(np.std(concat_accelerations[:, 1])),
+        "std_accel_z": float(np.std(concat_accelerations[:, 2]))
     }
 
 # Print statistics
