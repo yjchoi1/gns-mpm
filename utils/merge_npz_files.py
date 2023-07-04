@@ -15,23 +15,14 @@ dt_gns = 1.0  # 1.0 is default
 
 mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d_collision/"  # "./mpm"
 data_case = "trajectory"  # "mpm-9k-train"
-data_tags = [i for i in range(0, 3)]
+data_tags = [i for i in range(0, 819)]
 excluded_data_tags = []
 data_tags = [i for i in data_tags if i not in excluded_data_tags]
 save_name = "sand3d_collisions_train"
 
-
+# data containers
 trajectories = {}
-if dim == 2:
-    running_sum = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
-    running_sumsq = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
-    running_count = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
-if dim == 3:
-    running_sum = dict(velocity_x=0, velocity_y=0, velocity_z=0, acceleration_x=0, acceleration_y=0, acceleration_z=0)
-    running_sumsq = dict(velocity_x=0, velocity_y=0, velocity_z=0, acceleration_x=0, acceleration_y=0, acceleration_z=0)
-    running_count = dict(velocity_x=0, velocity_y=0, velocity_z=0, acceleration_x=0, acceleration_y=0, acceleration_z=0)
 data_names = []
-
 # for computing statistics
 cumulative_count = 0
 cumulative_sum_vel = np.zeros((1, dim))
@@ -69,7 +60,7 @@ for id in tqdm(data_tags, total=len(data_tags)):
     flattened_accelerations = np.reshape(accelerations, (-1, array_shape[-1]))
 
     # Compute statistics
-    cumulative_count += len(positions)
+    cumulative_count += len(flattened_velocities)
     # running sum
     cumulative_sum_vel += np.sum(flattened_velocities, axis=0)
     cumulative_sum_acc += np.sum(flattened_accelerations, axis=0)
@@ -79,10 +70,14 @@ for id in tqdm(data_tags, total=len(data_tags)):
     # statistics for cumulative data
     cumulative_mean_vel = cumulative_sum_vel / cumulative_count
     cumulative_mean_acc = cumulative_sum_acc / cumulative_count
+    # cumulative_std_vel = np.sqrt(
+    #     (cumulative_sumsq_vel - cumulative_sum_vel ** 2 / cumulative_count) / (cumulative_count - 1))
+    # cumulative_std_acc = np.sqrt(
+    #     (cumulative_sumsq_acc - cumulative_sum_acc ** 2 / cumulative_count) / (cumulative_count - 1))
     cumulative_std_vel = np.sqrt(
-        (cumulative_sumsq_vel - cumulative_sum_vel ** 2 / cumulative_count) / (cumulative_count - 1))
+        (cumulative_sumsq_vel/cumulative_count - (cumulative_sum_vel/cumulative_count)**2))
     cumulative_std_acc = np.sqrt(
-        (cumulative_sumsq_acc - cumulative_sum_acc ** 2 / cumulative_count) / (cumulative_count - 1))
+        (cumulative_sumsq_acc/cumulative_count - (cumulative_sum_acc/cumulative_count)**2))
 
 # Store final statistics
 if dim == 2:
@@ -117,6 +112,7 @@ for key, value in statistics.items():
     print(f"{key}: {value:.7E}")
 
 # Save npz
+print(f"Compressing npz...")
 np.savez_compressed(f"{save_name}.npz", **trajectories)
 print(f"npz saved at: ./{save_name}.npz")
 
@@ -159,10 +155,3 @@ if dim == 3:
 with open(f"metadata-{save_name}.json", "w") as fp:
     json.dump(metadata, fp)
 print(f"metadata saved at: ./{save_name}.json")
-
-
-# # See npz
-# data = np.load('train.npz', allow_pickle=True)
-# for simulation_id, trajectory in data.items():
-#     print(simulation_id)
-#     print(trajectory)
