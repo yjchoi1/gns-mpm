@@ -1,3 +1,9 @@
+# Preprocess droplet data as follows:
+# 1. Given that it has already changed from 3d to 2d,
+#    down-sample simulation frames by `sequence_downsample_rate`
+# 2. make `.npz` based on the down-sampled frames.
+# 3. make `metadata.json`
+
 import numpy as np
 import json
 
