@@ -15,23 +15,14 @@ dt_gns = 1.0  # 1.0 is default
 
 mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d_collision/"  # "./mpm"
 data_case = "trajectory"  # "mpm-9k-train"
-data_tags = [i for i in range(0, 3)]
+data_tags = [i for i in range(0, 819)]
 excluded_data_tags = []
 data_tags = [i for i in data_tags if i not in excluded_data_tags]
 save_name = "sand3d_collisions_train"
 
-
+# data containers
 trajectories = {}
-if dim == 2:
-    running_sum = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
-    running_sumsq = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
-    running_count = dict(velocity_x=0, velocity_y=0, acceleration_x=0, acceleration_y=0)
-if dim == 3:
-    running_sum = dict(velocity_x=0, velocity_y=0, velocity_z=0, acceleration_x=0, acceleration_y=0, acceleration_z=0)
-    running_sumsq = dict(velocity_x=0, velocity_y=0, velocity_z=0, acceleration_x=0, acceleration_y=0, acceleration_z=0)
-    running_count = dict(velocity_x=0, velocity_y=0, velocity_z=0, acceleration_x=0, acceleration_y=0, acceleration_z=0)
 data_names = []
-
 # for computing statistics
 cumulative_count = 0
 cumulative_sum_vel = np.zeros((1, dim))
@@ -121,6 +112,7 @@ for key, value in statistics.items():
     print(f"{key}: {value:.7E}")
 
 # Save npz
+print(f"Compressing npz...")
 np.savez_compressed(f"{save_name}.npz", **trajectories)
 print(f"npz saved at: ./{save_name}.npz")
 
@@ -163,10 +155,3 @@ if dim == 3:
 with open(f"metadata-{save_name}.json", "w") as fp:
     json.dump(metadata, fp)
 print(f"metadata saved at: ./{save_name}.json")
-
-
-# # See npz
-# data = np.load('train.npz', allow_pickle=True)
-# for simulation_id, trajectory in data.items():
-#     print(simulation_id)
-#     print(trajectory)
