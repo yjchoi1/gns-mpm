@@ -72,7 +72,8 @@ def autograd_inverse():
         records = pickle.load(open(record_file, "rb"))
         phi = records[-1]["updated_phi"]
         resume_epoch = records[-1]["epoch"]
-        print(f"Start optimization from phi: {phi}, epoch: {resume_epoch}")
+        lr = records[-1]["learning_rate"]
+        print(f"Start optimization from phi: {phi}, epoch: {resume_epoch}, lr: {lr}")
 
 
     # Start forward computations and gradient descent

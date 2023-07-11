@@ -64,7 +64,11 @@ def forward_rollout(
 
     # loss
     runout_distance = predictions[-1][:, 0].max()
-    loss = torch.mean((runout_distance - torch.tensor(target).to(device)) ** 2)
+    if target is not None:
+        loss = torch.mean((runout_distance - torch.tensor(target).to(device)) ** 2)
+    else:
+        print("Target runout is not provided. Skip computing loss")
+        loss = None
 
     output_dict = {
         'initial_positions': initial_positions.permute(1, 0, 2).cpu().numpy(),
