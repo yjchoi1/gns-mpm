@@ -5,6 +5,7 @@ from matplotlib import animation
 
 npz_loc = '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand3d-largesets-r041/train.npz'
 initial_timesteps = 6
+_data = [item for _, item in np.load(npz_loc, allow_pickle=True).items()]
 data = dict(np.load(npz_loc, allow_pickle=True))
 
 trajectories = {}

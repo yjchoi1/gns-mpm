@@ -3,14 +3,14 @@
 set -e
 
 # workdir
-export DATASET_NAME="sand3d-largesets-r041"
+export DATASET_NAME="sand3d_collision_r030"
 #for ((STEPS=10000000; STEPS<14000000; STEPS+=1000000))
-for STEPS in 680000
+for STEPS in 3000000
 do
 #export STEPS=15270000
-for i in 12
+for i in {0..4..1}
 do
-export OUTPUT_TAG="column_collapse${i}"
+export OUTPUT_TAG="${i}"
 export TRAJECTORY_ID="0"
 
 ## Change test.npz that is used to make rollout to the specified `test_{OUTPUT_TAG}.npz which you want to make rollout
@@ -18,7 +18,7 @@ export WORK_DIR="../gns-mpm-data/gns-data"
 if test -f "${WORK_DIR}/datasets/${DATASET_NAME}/test.npz"
  then rm ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
 fi
-cp ${WORK_DIR}/datasets/${DATASET_NAME}/sand3d_${OUTPUT_TAG}.npz ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
+cp ${WORK_DIR}/datasets/${DATASET_NAME}/trajectory${OUTPUT_TAG}.npz ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
 
 cd gns-parallel
 # Generate test rollouts.
