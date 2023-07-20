@@ -22,15 +22,15 @@ from gns import data_loader
 from gns import distribute
 
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
-flags.DEFINE_string('data_path', "/work/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand3d_collision_r030/", help='The dataset directory.')
-flags.DEFINE_string('model_path', '/work/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand3d_collision_r030_debug/', help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('data_path', "/work/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand3d_collision_r025/", help='The dataset directory.')
+flags.DEFINE_string('model_path', '/work/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand3d_collision_r025/', help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', '/work/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand3d_collision_r025/', help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', "model-3000000.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', "train_state-3000000.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')

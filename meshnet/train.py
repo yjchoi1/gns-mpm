@@ -19,21 +19,22 @@ from meshnet.noise import get_velocity_noise
 from meshnet.utils import datas_to_graph
 from meshnet.utils import NodeType
 from meshnet.utils import optimizer_to
+from transform_4face import MyFaceToEdge
 
 
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
-flags.DEFINE_string('data_path', None, help='The dataset directory.')
-flags.DEFINE_string('model_path', "model/", help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', "rollouts/", help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', None, help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/datasets/lbm-pipe/", help='The dataset directory.')
+flags.DEFINE_string('model_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/models/lbm-pipe/", help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', "/work2/08264/baagee/frontera/gns-meshnet-data/gns-data/rollouts/lbm-pipe/", help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', "model-2000.pt", help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', "train_state-2000.pt", help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
 flags.DEFINE_integer("cuda_device_number", None, help="CUDA device (zero indexed), default is None so default CUDA device will be used.")
 flags.DEFINE_string('rollout_filename', "rollout", help='Name saving the rollout')
 flags.DEFINE_integer('ntraining_steps', int(1E7), help='Number of training steps.')
-flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')
+flags.DEFINE_integer('nsave_steps', int(1000), help='Number of steps at which to save the model.')
 FLAGS = flags.FLAGS
 
 
@@ -48,8 +49,7 @@ loss_report_step = 10
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # an instance that transforms face-based graph to edge-based graph. Edge features are auto-computed using "Cartesian" and "Distance"
-transformer = T.Compose([T.FaceToEdge(), T.Cartesian(norm=False), T.Distance(norm=False)])
-
+transformer = T.Compose([MyFaceToEdge(), T.Cartesian(norm=False), T.Distance(norm=False)])
 
 def predict(simulator: learned_simulator.MeshSimulator,
             device: str):

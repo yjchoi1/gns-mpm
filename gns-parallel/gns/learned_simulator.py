@@ -104,7 +104,6 @@ class LearnedSimulator(nn.Module):
     # The flow direction when using in combination with message passing is
     # "source_to_target"
     receivers = edge_index[0, :]
-    print(f"nedge: {len(receivers)}")
     senders = edge_index[1, :]
 
     return receivers, senders

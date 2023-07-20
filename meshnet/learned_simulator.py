@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import sys
+import os
+sys.path.append('/work2/08264/baagee/frontera/gns-mpm-dev/gns/')
 from gns import graph_network
 from meshnet import normalization
 
