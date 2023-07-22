@@ -29,8 +29,8 @@ def rollout(simulator: learned_simulator.MeshSimulator,
     pressures = features[3]  # (1, nnode, 1)
     cells = features[4]  # # (1, ncells, nnode_per_cell)
 
-    initial_velocities = velocities[:INPUT_SEQUENCE_LENGTH]
-    ground_truth_initial_velocity = velocities[:INPUT_SEQUENCE_LENGTH].squeeze().to(device)
+    initial_velocities = velocities[:INPUT_SEQUENCE_LENGTH]  # velocity field at t=0
+    ground_truth_initial_velocity = velocities[:INPUT_SEQUENCE_LENGTH].squeeze().to(device)  # velocity field at t=0
 
     current_velocities = initial_velocities.squeeze().to(device)
     predictions = []
@@ -68,7 +68,7 @@ def rollout(simulator: learned_simulator.MeshSimulator,
             mask = mask.squeeze(1)
         # Maintain previous velocity if node_type is not (Normal or Outflow).
         # i.e., only update normal or outflow nodes.
-        predicted_next_velocity[mask] = ground_truth_initial_velocity[mask]
+        predicted_next_velocity[mask] = ground_truth_initial_velocity[mask]  # maintain velocity field at t=0 when velocity update
         predictions.append(predicted_next_velocity)
 
         # Update current position for the next prediction
