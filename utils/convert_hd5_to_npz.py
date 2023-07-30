@@ -25,7 +25,7 @@ def convert_hd5_to_npz(path: str, uuid: str, ndim: int, output: str, material_fe
 
     # read ndim if metatdata exists
     if not os.path.exists(f"{metadata_path}/metadata.json"):
-        raise FileExistsError(f"The path {metadata_path} does not exist.")
+        raise FileExistsError(f"The path {metadata_path}/metadata.json does not exist.")
     else:
         # read simulation dimension
         f = open(f"{metadata_path}/metadata.json")

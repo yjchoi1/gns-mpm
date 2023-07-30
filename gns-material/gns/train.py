@@ -75,6 +75,7 @@ def rollout(
   current_positions = initial_positions
   predictions = []
 
+  start = time.process_time()
   for step in range(nsteps):
     # Get next position with shape (nnodes, dim)
     next_position = simulator.predict_positions(
@@ -97,6 +98,7 @@ def rollout(
     current_positions = torch.cat(
         [current_positions[:, 1:], next_position[:, None, :]], dim=1)
 
+  print(f"Rollout for {nsteps} takes {time.process_time() - start}")
   # Predictions with shape (time, nnodes, dim)
   predictions = torch.stack(predictions)
   ground_truth_positions = ground_truth_positions.permute(1, 0, 2)
