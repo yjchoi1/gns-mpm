@@ -1,4 +1,5 @@
 import torch
+import torch.utils.checkpoint
 import sys
 import os
 import numpy as np
@@ -123,3 +124,80 @@ def forward_rollout_autograd(
     loss = torch.mean((final_position[:, 0].max() - torch.tensor(target).to(device)) ** 2)
 
     return loss, final_position.detach().cpu().numpy()
+
+
+def forward_rollout_velocity(
+        simulator: learned_simulator.LearnedSimulator,
+        initial_positions: torch.tensor,
+        particle_types: torch.tensor,
+        material_property: torch.tensor,  # torch scalar
+        n_particles_per_example: torch.tensor,
+        nsteps: int,
+        device):
+    """
+
+    """
+
+    current_positions = initial_positions
+    predictions = []
+
+    print(f"Begin rollout...")
+    for step in range(nsteps):
+        # Get next position with shape (nnodes, dim)
+        next_position = simulator.predict_positions(
+            current_positions,
+            nparticles_per_example=[n_particles_per_example.detach().requires_grad_(False)],
+            particle_types=particle_types.detach().requires_grad_(False),
+            material_property=material_property.detach().requires_grad_(False)
+        )
+        predictions.append(next_position)
+
+        # Shift `current_positions`, removing the oldest position in the sequence
+        # and appending the next position at the end.
+        current_positions = torch.cat(
+            [current_positions[:, 1:], next_position[:, None, :]], dim=1)
+
+    return torch.stack(predictions)
+
+
+def rollout_with_checkpointing(
+        simulator,
+        initial_positions: torch.tensor,
+        particle_types: torch.tensor,
+        material_property: torch.tensor,  # torch scalar
+        n_particles_per_example: torch.tensor,
+        nsteps: int,
+        checkpoint_interval=5
+        ):
+
+
+    current_positions = initial_positions
+    predictions = []
+
+    for step in range(nsteps):
+        # print(f"Step {step}/{nsteps}")
+        if step % checkpoint_interval == 0:  # Checkpoint every 2 time steps
+            next_position = torch.utils.checkpoint.checkpoint(
+                simulator.predict_positions,
+                current_positions,
+                [n_particles_per_example.detach().requires_grad_(False)],
+                particle_types.detach().requires_grad_(False),
+                material_property.detach().requires_grad_(False))
+
+        else:
+            next_position = simulator.predict_positions(
+                current_positions,
+                nparticles_per_example=[n_particles_per_example.detach().requires_grad_(False)],
+                particle_types=particle_types.detach().requires_grad_(False),
+                material_property=material_property.detach().requires_grad_(False)
+            )
+
+        predictions.append(next_position)
+
+        # Shift `current_positions`, removing the oldest position in the sequence
+        # and appending the next position at the end.
+        current_positions = torch.cat(
+            [current_positions[:, 1:], next_position[:, None, :]], dim=1)
+
+    return torch.stack(predictions)
+

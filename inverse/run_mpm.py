@@ -17,7 +17,7 @@ def run_mpm(path, mpm_input,
     mpm_input_guess["materials"][0]["residual_friction"] = guess
     mpm_input_guess["analysis"]["dt"] = analysis_dt
     mpm_input_guess["analysis"]["nsteps"] = analysis_nsteps
-    mpm_input_guess["ouput_steps"] = output_steps
+    mpm_input_guess["post_processing"]["output_steps"] = output_steps
     f.close()
 
     # %% PREPARE MPM INPUTS
