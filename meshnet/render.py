@@ -66,6 +66,7 @@ def render_gif_animation():
                 grid[j].triplot(triang, 'o-', color='k', ms=0.5, lw=0.3)
                 handle = grid[j].tripcolor(triang, vel[i], vmax=vmax, vmin=vmin)
                 fig.colorbar(handle, cax=grid.cbar_axes[0])
+                fig.suptitle(f"{i}/{n_timesteps}")
                 grid[j].set_title(sim)
         if FLAGS.mesh_type == "quad":
             for j, (sim, vel) in enumerate(velocity_result.items()):
@@ -88,6 +89,7 @@ def render_gif_animation():
                 # make the contour plot
                 handle = grid[j].contourf(grid_x, grid_y, grid_velocity, 50, vmax=vmax, vmin=vmin, cmap='viridis')
                 fig.colorbar(handle, cax=grid.cbar_axes[0])
+                fig.suptitle(f"{i}/{n_timesteps}")
                 grid[j].set_title(sim)
 
                 # handle = grid[j].contourf(X, Y, Z, 50, vmax=vmax, vmin=vmin, cmap='viridis')
@@ -104,7 +106,7 @@ def render_gif_animation():
     ani = animation.FuncAnimation(
         fig, animate, frames=np.arange(0, n_timesteps, FLAGS.step_stride), interval=20)
 
-    ani.save(f'{animation_filename}', dpi=100, fps=30, writer='imagemagick')
+    ani.save(f'{animation_filename}', dpi=100, fps=10, writer='imagemagick')
     print(f"Animation saved to: {animation_filename}")
 
 
