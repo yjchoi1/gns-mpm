@@ -99,26 +99,8 @@ for epoch in range(start_epoch+1, nepoch):
     start = time.time()
     optimizer.zero_grad()  # Clear previous gradients
 
-    # # Run MPM with current friction angle to get X0
-    # run_mpm(path,
-    #         mpm_input,
-    #         epoch,
-    #         friction.item(),
-    #         analysis_dt,
-    #         analysis_nsteps,
-    #         output_steps)
-    #
-    # # Make `.npz` to prepare initial state X_1 for rollout
-    # convert_hd5_to_npz(path=f"{path}/{output_dir}/mpm_epoch-{epoch}/",
-    #                    uuid=f"/results/{uuid_name}/",
-    #                    ndim=ndim,
-    #                    output=f"{path}/{output_dir}/x0_epoch-{epoch}.npz",
-    #                    material_feature=True,
-    #                    dt=1.0)
-
     # Load data containing X0, and get necessary features.
     # First, obtain ground truth features except for material property
-    # dinit = data_loader.TrajectoriesDataset(path=f"{path}/{output_dir}/x0_epoch-{epoch}.npz")
     dinit = data_loader.TrajectoriesDataset(path=f"{path}/{ground_truth_npz}")
     for example_i, features in enumerate(dinit):  # only one item exists in `dint`. No need `for` loop
         if len(features) < 3:
