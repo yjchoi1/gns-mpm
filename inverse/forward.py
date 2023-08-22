@@ -3,6 +3,7 @@ import torch.utils.checkpoint
 import sys
 import os
 import numpy as np
+from tqdm import tqdm
 
 sys.path.append('/work2/08264/baagee/frontera/gns-mpm-dev/gns-material/')
 from gns import learned_simulator
@@ -100,7 +101,7 @@ def forward_rollout_autograd(
     material_property_tensor = material_property * torch.full((1, n_particles_per_example), 1).to(device)
 
     print(f"Begin Rollout for {material_property.to(torch.float32)} rad...")
-    for step in range(nsteps):
+    for step in tqdm(range(nsteps), total=nsteps):
         print(f"Step {step}")
         if step % 10 == 0:
             print(f"rollout step {step}/{nsteps} at phi {material_property.to(torch.float32)} rad...")
@@ -164,40 +165,59 @@ def rollout_with_checkpointing(
         simulator,
         initial_positions: torch.tensor,
         particle_types: torch.tensor,
-        material_property: torch.tensor,  # torch scalar
+        material_property: torch.tensor,
         n_particles_per_example: torch.tensor,
         nsteps: int,
-        checkpoint_interval=5
+        checkpoint_interval=5,
+        is_checkpointing=True
         ):
 
 
     current_positions = initial_positions
     predictions = []
 
-    for step in range(nsteps):
-        # print(f"Step {step}/{nsteps}")
-        if step % checkpoint_interval == 0:  # Checkpoint every 2 time steps
-            next_position = torch.utils.checkpoint.checkpoint(
-                simulator.predict_positions,
-                current_positions,
-                [n_particles_per_example.detach().requires_grad_(False)],
-                particle_types.detach().requires_grad_(False),
-                material_property.detach().requires_grad_(False))
+    if is_checkpointing:
+        for step in tqdm(range(nsteps), total=nsteps):
+            # print(f"Step {step}/{nsteps}")
+            if step % checkpoint_interval == 0:  # Checkpoint every 2 time steps
+                next_position = torch.utils.checkpoint.checkpoint(
+                    simulator.predict_positions,
+                    current_positions,
+                    [n_particles_per_example],
+                    particle_types,
+                    material_property
+                )
+            else:
+                next_position = simulator.predict_positions(
+                    current_positions,
+                    nparticles_per_example=[n_particles_per_example],
+                    particle_types=particle_types,
+                    material_property=material_property
+                )
 
-        else:
+            predictions.append(next_position)
+
+            # Shift `current_positions`, removing the oldest position in the sequence
+            # and appending the next position at the end.
+            current_positions = torch.cat(
+                [current_positions[:, 1:], next_position[:, None, :]], dim=1)
+
+    else:
+        for step in tqdm(range(nsteps), total=nsteps):
             next_position = simulator.predict_positions(
                 current_positions,
-                nparticles_per_example=[n_particles_per_example.detach().requires_grad_(False)],
-                particle_types=particle_types.detach().requires_grad_(False),
-                material_property=material_property.detach().requires_grad_(False)
+                nparticles_per_example=[n_particles_per_example],
+                particle_types=particle_types,
+                material_property=material_property
             )
+            predictions.append(next_position)
 
-        predictions.append(next_position)
+            # Shift `current_positions`, removing the oldest position in the sequence
+            # and appending the next position at the end.
+            current_positions = torch.cat(
+                [current_positions[:, 1:], next_position[:, None, :]], dim=1)
 
-        # Shift `current_positions`, removing the oldest position in the sequence
-        # and appending the next position at the end.
-        current_positions = torch.cat(
-            [current_positions[:, 1:], next_position[:, None, :]], dim=1)
-
-    return torch.stack(predictions)
+    return torch.cat(
+        (initial_positions.permute(1, 0, 2), torch.stack(predictions))
+    )
 
