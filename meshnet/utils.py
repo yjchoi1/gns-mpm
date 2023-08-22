@@ -17,24 +17,23 @@ class NodeType(enum.IntEnum):
 def datas_to_graph(training_example, dt, device):
 
     # features
-    node_coords = training_example[0][0].to(device)  # (nnodes, dims)
-    node_type = training_example[0][1].to(device)  # (nnodes, 1)
-    velocity_feature = training_example[0][2].to(device)  # (nnodes, dims)
-    pressure = training_example[0][3].to(device)  # (nnodes, 1)
-    cells = training_example[0][4].to(device)  # (ncells, nnodes_per_cell)
-    cells = torch.transpose(cells, 0, 1).type(torch.LongTensor).to(device)
-    time_vector = training_example[0][5] * dt  # (nnodes, )
-    time_vector = time_vector.unsqueeze(1).to(device)
+    node_coords = training_example[0][0]  # (nnodes, dims)
+    node_type = training_example[0][1]  # (nnodes, 1)
+    velocity_feature = training_example[0][2]  # (nnodes, dims)
+    cells = training_example[0][3]  # (ncells, nnodes_per_cell)
+    cells = torch.transpose(cells, 0, 1).type(torch.LongTensor)
+    time_vector = training_example[0][4] * dt  # (nnodes, )
+    time_vector = time_vector.unsqueeze(1)
     # n_node_per_example = training_example[0][6]
 
     # aggregate node features
-    node_features = torch.hstack((node_type, velocity_feature, pressure, time_vector)).to(device)
+    node_features = torch.hstack((node_type, velocity_feature, time_vector))
 
     # target velocity
-    velocity_target = training_example[1].to(device)  # (nnodes, dims)
+    velocity_target = training_example[1]  # (nnodes, dims)
 
     # make graph
-    graph = Data(x=node_features, face=cells, y=velocity_target, pos=node_coords)
+    graph = Data(x=node_features, face=cells, y=velocity_target, pos=node_coords, device=device)
 
     return graph
 
