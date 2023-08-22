@@ -158,7 +158,7 @@ def predict(device: str, FLAGS, flags, world_size):
       if FLAGS.mode == 'rollout':
         example_rollout['metadata'] = metadata
         example_rollout['loss'] = loss.mean()
-        filename = f'{FLAGS.rollout_filename}.pkl'
+        filename = f'{FLAGS.rollout_filename}_ex{example_i}.pkl'
         filename = os.path.join(FLAGS.output_path, filename)
         with open(filename, 'wb') as f:
           pickle.dump(example_rollout, f)
