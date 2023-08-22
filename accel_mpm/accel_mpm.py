@@ -530,10 +530,10 @@ import pickle
 with open(f'{path}/position_results.pkl', 'rb') as f:
     position_results = pickle.load(f)
 
-# render
-render_gns_to_mpm(data=position_results,
-                  boundaries=[[0, 1], [0, 1]],
-                  output_name=f"{path}/gns_to_mpm.gif")
+# # render
+# render_gns_to_mpm(data=position_results,
+#                   boundaries=[[0, 1], [0, 1]],
+#                   output_name=f"{path}/gns_to_mpm.gif")
 
 #%%
 # rollout analysis for "MPM" vs "GNS+MPM"
@@ -565,44 +565,68 @@ disp_gns_to_mpm = np.linalg.norm(
 disp_gns_only = np.linalg.norm(
     initial_position_expanded - position_results["gns_rollout"], axis=-1)
 
-
 # compute relative error
-error_gns_to_mpm = np.nanmean(np.abs((disp_gns_to_mpm - disp_mpm)/disp_mpm), axis=1)*100
-error_gns_only = np.nanmean(np.abs((disp_gns_only - disp_mpm)/disp_mpm), axis=1)*100
+relative_error_gns_to_mpm = np.nanmean(np.abs((disp_gns_to_mpm - disp_mpm)/disp_mpm), axis=1)*100
+relative_error_gns_only = np.nanmean(np.abs((disp_gns_only - disp_mpm)/disp_mpm), axis=1)*100
 
-# # compute absolute position error
-# error_gns_to_mpm = np.linalg.norm(
-#     position_results["mpm_rollout"] - position_results["gns_to_mpm_rollout"], axis=-1
-# ).mean(axis=1)
-# error_gns_only = np.linalg.norm(
-#     position_results["mpm_rollout"] - position_results["gns_rollout"], axis=-1
-# ).mean(axis=1)
+# compute absolute position error
+norm_error_gns_to_mpm = np.linalg.norm(
+    position_results["mpm_rollout"] - position_results["gns_to_mpm_rollout"], axis=-1
+).mean(axis=1)
+norm_error_gns_only = np.linalg.norm(
+    position_results["mpm_rollout"] - position_results["gns_rollout"], axis=-1
+).mean(axis=1)
+
+# absolute error
+abs_error_gns_to_mpm = np.mean(np.abs((disp_gns_to_mpm - disp_mpm)), axis=1)
+abs_error_gns_only = np.mean(np.abs((disp_gns_only - disp_mpm)), axis=1)
 
 # plot
 titles = ["GNS+MPM", "GNS-only"]
 timesteps = range(ntimesteps)
-fig, axs = plt.subplots(1, 2, figsize=(7.5, 3))
-axs[0].plot(timesteps, error_gns_to_mpm)
-axs[1].plot(timesteps, error_gns_only)
-for i, ax in enumerate(axs):
-    if i == 0:
-        ax.axvline(x=5, c="black", alpha=0.5)
-        ax.axvline(x=105, c="black", alpha=0.5)
-        ax.axvline(x=110, c="black", alpha=0.5)
-        ax.axvline(x=210, c="black", alpha=0.5)
-        ax.axvline(x=215, c="black", alpha=0.5)
-        ax.axvline(x=315, c="black", alpha=0.5)
-        ax.axvline(x=320, c="black", alpha=0.5)
-        ax.axvline(x=374, c="black", alpha=0.5)
-        ax.axvline(x=379, c="black", alpha=0.5)
-    ax.set_xlim([0, 380])
-    ax.set_ylim([0, 500])
-    ax.set_xlabel("Time step")
-    ax.set_ylabel("Displacement error (%)")
-    ax.set_title(titles[i])
-    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+fig, ax = plt.subplots(figsize=(5, 3.5))
+ax.plot(timesteps, abs_error_gns_to_mpm, c="blue", linestyle="-", label="GNS+MPM")
+ax.plot(timesteps, abs_error_gns_only, c="red", linestyle="--", label="GNS-only")
+ax.axvline(x=5, c="gray", alpha=0.5, linestyle="dotted")
+ax.axvline(x=105, c="gray", alpha=0.5, linestyle="dotted")
+ax.axvline(x=110, c="gray", alpha=0.5, linestyle="dotted")
+ax.axvline(x=210, c="gray", alpha=0.5, linestyle="dotted")
+ax.axvline(x=215, c="gray", alpha=0.5, linestyle="dotted")
+ax.axvline(x=315, c="gray", alpha=0.5, linestyle="dotted")
+ax.axvline(x=320, c="gray", alpha=0.5, linestyle="dotted")
+ax.axvline(x=374, c="gray", alpha=0.5, linestyle="dotted")
+ax.axvline(x=379, c="gray", alpha=0.5, linestyle="dotted")
+ax.set_xlim([0, 380])
+ax.set_ylim([0, 3.0e-3])
+ax.set_xlabel("Time step")
+ax.legend(loc="lower right")
+ax.set_ylabel("Absolute displacement error (m)")
+# ax.set_title(titles[i])
+ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
 plt.tight_layout()
-plt.savefig(f"{path}/error.png")
 plt.show()
+#
+# axs[0].plot(timesteps, error_gns_to_mpm)
+# axs[1].plot(timesteps, error_gns_only)
+# for i, ax in enumerate(axs):
+#     if i == 0:
+#         ax.axvline(x=5, c="black", alpha=0.5)
+#         ax.axvline(x=105, c="black", alpha=0.5)
+#         ax.axvline(x=110, c="black", alpha=0.5)
+#         ax.axvline(x=210, c="black", alpha=0.5)
+#         ax.axvline(x=215, c="black", alpha=0.5)
+#         ax.axvline(x=315, c="black", alpha=0.5)
+#         ax.axvline(x=320, c="black", alpha=0.5)
+#         ax.axvline(x=374, c="black", alpha=0.5)
+#         ax.axvline(x=379, c="black", alpha=0.5)
+#     ax.set_xlim([0, 380])
+#     ax.set_ylim([0, 500])
+#     ax.set_xlabel("Time step")
+#     ax.set_ylabel("Displacement error (%)")
+#     ax.set_title(titles[i])
+#     ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+# plt.tight_layout()
+# plt.savefig(f"{path}/error.png")
+# plt.show()
 
 
