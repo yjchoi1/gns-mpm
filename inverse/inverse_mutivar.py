@@ -1,8 +1,10 @@
 import torch
+import time
 import os
 import sys
 import numpy as np
 import glob
+from utils.torch_model_wrapper import Make_it_to_torch_model
 from io import StringIO
 from matplotlib import pyplot as plt
 from utils import render
@@ -23,6 +25,7 @@ ground_truth_npz = "multivar1.npz"
 dt_mpm = 0.0025
 inverse_timestep = 200
 nepoch = 300
+lr = 10
 resume = False
 resume_epoch = 100
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -67,8 +70,9 @@ initial_velocity = torch.tensor(
     [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]],
     requires_grad=True, device=device)
 
-# Optimizer
-optimizer = torch.optim.SGD([initial_velocity], lr=10)
+# Set up the optimizer
+optimizer = torch.optim.Adam([initial_velocity], lr=lr)
+initial_velocity_model = Make_it_to_torch_model(initial_velocity)
 
 # Set output folder
 if not os.path.exists(f"{path}/outputs/"):
@@ -77,14 +81,17 @@ if not os.path.exists(f"{path}/outputs/"):
 # Resume
 if resume:
     print("Resume from the previous state")
-    checkpoint = torch.load(f"{path}/optimizer_state-{resume_epoch}.pt")
-    initial_velocity = checkpoint["initial_velocity"]
-    optimizer = torch.optim.Adam(initial_velocity)
-    optimizer.load_state_dict(checkpoint['optimizer'])
-
+    checkpoint = torch.load(f"{path}/outputs/optimizer_state-{resume_epoch}.pt")
+    start_epoch = checkpoint["epoch"]
+    initial_velocity_model.load_state_dict(checkpoint['friction_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+else:
+    start_epoch = 0
+initial_velocity = initial_velocity_model.current_params
 
 # Start optimization iteration
-for epoch in range(nepoch):
+for epoch in range(start_epoch+1, nepoch):
+    start = time.time()
     optimizer.zero_grad()  # Clear previous gradients
 
     # Load data containing X0, and get necessary features.
@@ -105,7 +112,7 @@ for epoch in range(nepoch):
         initial_positions_all_group.append(torch.stack(initial_positions_each_group))
     initial_positions = torch.concat(initial_positions_all_group, axis=1).to(device).permute(1, 0, 2).to(torch.float32).contiguous()
 
-    if epoch % 1 == 0:
+    if epoch % save_step == 0:
         print(f"Initial velocities: {initial_velocity[0].detach().cpu().numpy(), initial_velocity[1].detach().cpu().numpy(), initial_velocity[2].detach().cpu().numpy()}")
 
     predicted_positions = rollout_with_checkpointing(
@@ -114,7 +121,7 @@ for epoch in range(nepoch):
         particle_types=particle_type,
         material_property=material_property,
         n_particles_per_example=n_particles_per_example,
-        nsteps=inverse_timestep,
+        nsteps=inverse_timestep - initial_positions.shape[1] + 1,  # exclude initial positions (x0) which we already have
     )
 
     inversion_positions = predicted_positions[inverse_timestep - 6:inverse_timestep]
@@ -122,6 +129,9 @@ for epoch in range(nepoch):
     loss = torch.mean((inversion_positions - target_final_positions) ** 2)
     loss.backward()
     optimizer.step()
+
+    end = time.time()
+    time_for_iteration = end - start
 
     # Save and report optimization status
     if epoch % save_step == 0:
@@ -134,11 +144,13 @@ for epoch in range(nepoch):
         inversion_position_plot = inversion_positions.clone().detach().cpu().numpy()
         target_final_position_plot = target_final_positions.clone().detach().cpu().numpy()
         ax.scatter(inversion_position_plot[-1][:, 0],
-                   inversion_position_plot[-1][:, 1], alpha=0.5, s=0.2, c="gray")
+                   inversion_position_plot[-1][:, 1], alpha=0.5, s=0.2, c="gray", label="Current")
         ax.scatter(target_final_position_plot[-1][:, 0],
-                   target_final_position_plot[-1][:, 1], alpha=0.5, s=0.2, c="red")
-        ax.set_xlim([0.0, 1.0])
-        ax.set_ylim([0.0, 1.0])
+                   target_final_position_plot[-1][:, 1], alpha=0.5, s=0.2, c="red", label="True")
+        ax.set_xlim(metadata['bounds'][0])
+        ax.set_ylim(metadata['bounds'][1])
+        ax.legend()
+        ax.grid(True)
         plt.savefig(f"{path}/outputs/inversion-{epoch}.png")
 
         # Animation
@@ -163,9 +175,11 @@ for epoch in range(nepoch):
 
         # Save optimizer state
         torch.save({
-            'initial_velocity': initial_velocity,
-            'optimizer': optimizer.state_dict(),
+            'epoch': epoch,
+            'position_state_dict': {
+                "target_positions": mpm_trajectory[0][0], "inversion_positions": predicted_positions
+            },
+            'initial_velocity': Make_it_to_torch_model(initial_velocity).state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss
         }, f"{path}/outputs/optimizer_state-{epoch}.pt")
-
-
-
