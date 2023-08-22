@@ -4,17 +4,22 @@ import shutil
 import subprocess
 
 
-def run_mpm(path, mpm_input,
-            guess, analysis_dt, analysis_nsteps, output_steps,
-            record):
+def run_mpm(path,
+            output_dir,
+            mpm_input,
+            epoch,
+            friction,
+            analysis_dt,
+            analysis_nsteps,
+            output_steps):
 
     # %% PREPARE MPM INPUT FILE FOR EACH PHI
     # open initial mpm input with arbitrary phi value
     f = open(os.path.join(path, mpm_input))
     # modify phi in the mpm input file
     mpm_input_guess = json.load(f)
-    mpm_input_guess["materials"][0]["friction"] = guess
-    mpm_input_guess["materials"][0]["residual_friction"] = guess
+    mpm_input_guess["materials"][0]["friction"] = friction
+    mpm_input_guess["materials"][0]["residual_friction"] = friction
     mpm_input_guess["analysis"]["dt"] = analysis_dt
     mpm_input_guess["analysis"]["nsteps"] = analysis_nsteps
     mpm_input_guess["post_processing"]["output_steps"] = output_steps
@@ -22,7 +27,7 @@ def run_mpm(path, mpm_input,
 
     # %% PREPARE MPM INPUTS
     # make mpm folder for current phi guess
-    mpm_folder = os.path.join(path, f"mpm_phi{guess}")
+    mpm_folder = os.path.join(f"{path}/outputs", f"mpm_epoch-{epoch}")
     os.makedirs(mpm_folder, exist_ok=True)
     # mpm input files should be located in the `path`
     file_paths = [
@@ -46,9 +51,6 @@ def run_mpm(path, mpm_input,
         json.dump(mpm_input_guess, f, indent=2)
     f.close()
 
-    # record current mpm input
-    record[f"mpm_input_files_phi"] = mpm_input_guess
-
     # %% RUN MPM
     # write bash file to run mpm
     with open(f'{path}/run_mpm.sh', 'w') as rsh:
@@ -56,7 +58,10 @@ def run_mpm(path, mpm_input,
             f'''\
             #! /bin/bash
             module reset
-            /work/08264/baagee/frontera/mpm/build/mpm -i /mpm_input.json -f "{path}/mpm_phi{guess}/"
+            module load intel
+            module load libfabric
+            timeout 30 /work/08264/baagee/frontera/mpm/build/mpm -i /mpm_input.json -f "{path}/{output_dir}/outputs/mpm_epoch-{epoch}/"
+            /work/08264/baagee/frontera/mpm/build/mpm -i /mpm_input_resume.json -f "{path}/{output_dir}/mpm_epoch-{epoch}/"
             ''')
 
     # run mpm
@@ -64,5 +69,3 @@ def run_mpm(path, mpm_input,
         script = bashfile.read()
     with open(f"{mpm_folder}/mpm_out.txt", 'w') as outfile:
         rc = subprocess.call(script, shell=True, stdout=outfile)
-
-    return record
