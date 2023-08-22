@@ -76,6 +76,7 @@ def predict(simulator: learned_simulator.MeshSimulator,
         path=f"{FLAGS.data_path}{split}.npz", fixed_mesh=FLAGS.is_fixed_mesh)
 
     # Rollout
+    eval_loss = []
     with torch.no_grad():
         for i, features in enumerate(ds):
             nsteps = len(features[0]) - INPUT_SEQUENCE_LENGTH
@@ -88,8 +89,9 @@ def predict(simulator: learned_simulator.MeshSimulator,
                 filename = os.path.join(FLAGS.output_path, filename)
                 with open(filename, 'wb') as f:
                     pickle.dump(prediction_data, f)
+            eval_loss.append(prediction_data['mean_loss'])
 
-    print(f"Mean loss on rollout prediction: {prediction_data['mean_loss']}")
+    print(f"Mean loss on rollout prediction: {np.mean(eval_loss)}")
 
 def rollout(simulator: learned_simulator.MeshSimulator,
             features,
