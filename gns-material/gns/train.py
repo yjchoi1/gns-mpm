@@ -123,7 +123,7 @@ def predict(device: str, FLAGS, flags, world_size):
     simulator: Trained simulator if not raise error.
 
   """
-  metadata = reading_utils.read_metadata(FLAGS.data_path)
+  metadata = reading_utils.read_metadata(FLAGS.data_path)["rollout"]
   simulator = _get_simulator(metadata, FLAGS.noise_std, FLAGS.noise_std, device)
 
   # Load simulator
@@ -203,7 +203,7 @@ def train(rank, flags, world_size):
   """
   distribute.setup(rank, world_size)
 
-  metadata = reading_utils.read_metadata(flags["data_path"])
+  metadata = reading_utils.read_metadata(flags["data_path"])["train"]
   serial_simulator = _get_simulator(metadata, flags["noise_std"], flags["noise_std"], rank)
 
   simulator = DDP(serial_simulator.to(rank), device_ids=[rank], output_device=rank)
