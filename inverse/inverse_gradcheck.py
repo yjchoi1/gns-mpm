@@ -211,11 +211,11 @@ for epoch in range(start_epoch+1, nepoch):
 
     # Visualize current prediction
     print(f"Epoch {epoch-1}, Friction {friction.item():.5f}, Loss {loss.item():.8f}")
-    visualize_final_deposits(friction.item(),
-                             predicted_positions,
+    visualize_final_deposits(predicted_positions,
                              target_positions,
                              metadata,
-                             write_path=f"{path}/{output_dir}/inversion-{epoch-1}.png")
+                             write_path=f"{path}/{output_dir}/inversion-{epoch-1}.png",
+                             friction=friction.item())
 
     # Perform optimization step
     optimizer.step()
@@ -246,7 +246,7 @@ for epoch in range(start_epoch+1, nepoch):
                 "target_positions": predicted_positions.clone().detach().cpu().numpy(),
                 "inversion_positions": target_positions.clone().detach().cpu().numpy()
             },
-            'friction_state_dict': Make_it_to_torch_model(friction).state_dict(),
+            'friction_state_dict': To_Torch_Model_Param(friction).state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss,
             'loss_constraints': {"loss_limit": loss_limit, "penalty_mag": penalty_mag} if loss_constraint else None,
