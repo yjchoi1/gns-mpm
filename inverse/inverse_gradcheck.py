@@ -4,7 +4,7 @@ import os
 import sys
 import numpy as np
 import glob
-from utils import Make_it_to_torch_model
+from utils import To_Torch_Model_Param
 from matplotlib import pyplot as plt
 import torch.utils.checkpoint
 from forward import rollout_with_checkpointing
@@ -83,7 +83,7 @@ target_final_runout = target_positions[inverse_timestep][:, 0].max().to(device)
 
 # Initialize friction angle to start optimizing
 friction = torch.tensor([phi], requires_grad=True, device=device)
-friction_model = Make_it_to_torch_model(friction)
+friction_model = To_Torch_Model_Param(friction)
 
 # Set up the optimizer
 optimizer = torch.optim.SGD(friction_model.parameters(), lr=lr)
