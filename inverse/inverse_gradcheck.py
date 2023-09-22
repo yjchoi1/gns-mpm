@@ -67,7 +67,7 @@ save_step = 1
 # ---------------------------------------------------------------------------------
 
 # Load simulator
-metadata = reading_utils.read_metadata(simulator_metadata_path)
+metadata = reading_utils.read_metadata(simulator_metadata_path, "rollout")
 simulator = train._get_simulator(metadata, noise_std, noise_std, device)
 if os.path.exists(model_path + model_file):
     simulator.load(model_path + model_file)
