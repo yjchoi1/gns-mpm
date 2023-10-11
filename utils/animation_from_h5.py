@@ -18,10 +18,12 @@ def from_h5_to_animation():
     parser.add_argument("--xboundary", nargs="+", help="x boundary of simulation domain")
     parser.add_argument("--yboundary", nargs="+", help="y boundary of simulation domain")
     parser.add_argument("--zboundary", nargs="+", default=None, help="z boundary of simulation domain")
+    parser.add_argument('--step_stride', default=5, type=int, help='Stride step for animation frame')
     args = parser.parse_args()
 
     path = args.path
     output = args.output
+    step_stride = args.step_stride
     xboundary = args.xboundary
     yboundary = args.yboundary
     ndim = args.ndim
@@ -80,7 +82,7 @@ def from_h5_to_animation():
             ax.grid(True, which='both')
 
         ani = animation.FuncAnimation(
-            fig, animate, frames=np.arange(0, len(positions), 3), interval=10)
+            fig, animate, frames=np.arange(0, len(positions), step_stride), interval=10)
 
         ani.save(f'{output}/trajectory.gif', dpi=100, fps=30, writer='imagemagick')
         print(f"Animation saved to: {output}")
@@ -109,7 +111,7 @@ def from_h5_to_animation():
             ax.grid(True, which='both')
 
         ani = animation.FuncAnimation(
-            fig, animate, frames=np.arange(0, len(positions), 3), interval=10)
+            fig, animate, frames=np.arange(0, len(positions), step_stride), interval=10)
 
         ani.save(f'{output}/trajectory.gif', dpi=100, fps=30, writer='imagemagick')
         print(f"Animation saved to: {output}")
