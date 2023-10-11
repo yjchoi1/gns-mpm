@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import json
 import glob
-from utils import Make_it_to_torch_model
+from utils import To_Torch_Model_Param
 from io import StringIO
 from matplotlib import pyplot as plt
 # from utils import render
@@ -23,16 +23,16 @@ from gns import train
 
 
 # inputs
-resume = False
-resume_epoch = 1
+resume = True
+resume_epoch = 20
 
-nepoch = 50
+nepoch = 30
 inverse_timestep_range = [300, 380]
 checkpoint_interval = 1
 lr = 0.1
-simulation_name = "multivar2_inverse"
+simulation_name = "multivar3_inverse"
 path = f"/work2/08264/baagee/frontera/gns-mpm-data/gns-data/inverse/{simulation_name}/"
-ground_truth_npz = "sand2d_inverse_eval29.npz"
+ground_truth_npz = "sand2d_inverse_eval30.npz"
 ground_truth_mpm_inputfile = "mpm_input.json"
 dt_mpm = 0.0025
 
@@ -45,7 +45,7 @@ simulator_metadata_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/da
 model_file = "model-7020000.pt"
 
 # outputs
-output_dir = f"/outputs/"
+output_dir = f"/outputs_x/"
 save_step = 1
 
 #%%
@@ -107,22 +107,22 @@ for filename in particle_files:
 initial_position = torch.concat(particle_groups).to(device)
 
 # Initialize initial velocity (i.e., dot{p}_0)
-initial_velocity = torch.tensor(
-    [[0.0, 0.0],
-     [0.0, 0.0],
-     [0.0, 0.0],
-     [0.0, 0.0],
-     [0.0, 0.0],
-     [0.0, 0.0],
-     [0.0, 0.0],
-     [0.0, 0.0],
-     [0.0, 0.0],
-     [0.0, 0.0]],
+initial_velocity_x = torch.tensor(
+    [[0.0],
+     [0.0],
+     [0.0],
+     [0.0],
+     [0.0],
+     [0.0],
+     [0.0],
+     [0.0],
+     [0.0],
+     [0.0]],
     requires_grad=True, device=device)
-initial_velocity_model = Make_it_to_torch_model(initial_velocity)
+initial_velocity_x_model = To_Torch_Model_Param(initial_velocity_x)
 
 # Set up the optimizer
-optimizer = torch.optim.Adam(initial_velocity_model.parameters(), lr=lr)
+optimizer = torch.optim.Adam(initial_velocity_x_model.parameters(), lr=lr)
 
 # Set output folder
 if not os.path.exists(f"{path}/{output_dir}"):
@@ -133,11 +133,12 @@ if resume:
     print(f"Resume from the previous state: epoch{resume_epoch}")
     checkpoint = torch.load(f"{path}/{output_dir}/optimizer_state-{resume_epoch}.pt")
     start_epoch = checkpoint["epoch"]
-    initial_velocity_model.load_state_dict(checkpoint['velocity_state_dict'])
+    initial_velocity_x_model.load_state_dict(checkpoint['velocity_x_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 else:
     start_epoch = 0
-initial_velocity = initial_velocity_model.current_params
+initial_velocity_x = initial_velocity_x_model.current_params
+initial_velocity_y = torch.full((len(initial_velocity_x), 1), 0).to(device)
 
 # Start optimization iteration
 for epoch in range(start_epoch+1, nepoch):
@@ -156,6 +157,7 @@ for epoch in range(start_epoch+1, nepoch):
         n_particles_per_example = torch.tensor([int(features[3])], dtype=torch.int32).to(device)
 
     # Next, make [p0, p1, ..., p5] using current initial velocity, assuming that velocity is the same for 5 timesteps
+    initial_velocity = torch.hstack((initial_velocity_x, initial_velocity_y))
     initial_pos_seq_all_group = []
     for i, particle_group_idx_range in enumerate(particle_group_idx_ranges):
         initial_pos_seq_each_group = [
@@ -163,7 +165,7 @@ for epoch in range(start_epoch+1, nepoch):
         initial_pos_seq_all_group.append(torch.stack(initial_pos_seq_each_group))
     initial_positions = torch.concat(initial_pos_seq_all_group, axis=1).to(device).permute(1, 0, 2).to(torch.float32).contiguous()
 
-    print(f"Initial velocities: {initial_velocity.detach().cpu().numpy()}")
+    # print(f"Initial velocities: {initial_velocity.detach().cpu().numpy()}")
 
     predicted_positions = rollout_with_checkpointing(
         simulator=simulator,
@@ -217,7 +219,7 @@ for epoch in range(start_epoch+1, nepoch):
         current_history = {
             "epoch": epoch,
             "lr": optimizer.state_dict()["param_groups"][0]["lr"],
-            "initial_velocity": initial_velocity.detach().cpu().numpy(),
+            "initial_velocity_x": initial_velocity_x.detach().cpu().numpy(),
             "loss": loss.item()
         }
 
@@ -229,7 +231,7 @@ for epoch in range(start_epoch+1, nepoch):
                 "target_positions": mpm_trajectory[0][0],
                 "inversion_positions": predicted_positions.clone().detach().cpu().numpy()
             },
-            'velocity_state_dict': Make_it_to_torch_model(initial_velocity).state_dict(),
+            'velocity_x_state_dict': To_Torch_Model_Param(initial_velocity_x).state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss,
         }, f"{path}/{output_dir}/optimizer_state-{epoch}.pt")
