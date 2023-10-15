@@ -42,11 +42,15 @@ for id in tqdm(data_tags, total=len(data_tags)):
     data = np.load(npz_path, allow_pickle=True)
     # get trajectory info
     if 'gns_data' in data:
-        # for latest npz data
-        data_dict = data['gns_data'].item()
-        simulation_id = list(data_dict.keys())[0]
-        trajectory = list(data_dict.values())[0]
-        trajectories[simulation_id] = trajectory
+        try:
+            # for latest npz data
+            data_dict = data['gns_data'].item()
+            simulation_id = list(data_dict.keys())[0]
+            trajectory = list(data_dict.values())[0]
+            trajectories[simulation_id] = trajectory
+        except:
+            trajectory = data['gns_data'][0]
+            trajectories[f"simulation_trajectory_{id}"] = trajectory
     else:
         # for previous npz data
         for simulation_id, trajectory in data.items():  # note, only one trajectory exists, so no need to iterate
