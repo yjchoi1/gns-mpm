@@ -3,18 +3,18 @@ import json
 from tqdm import tqdm
 
 # Inputs
-bounds = [[-999, 999], [0.0, 999]]
-sequence_length = int(350)
+bounds = [[-150, 150], [0.0, 200]]
+sequence_length = None
 default_connectivity_radius = 5.0
 dim = int(2)
 material_feature_len = int(0)
-dt_mpm = 0.0025  # 0.0025
+dt_mpm = None  # 0.0025
 mpm_cell_size = "iam"  # [0.0125, 0.0125]
 nparticles_per_cell = "iam"  # int(16)
 dt_gns = 1.0  # 1.0 is default
 
 mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/iam/"  # "./mpm"
-data_case = "trj"  # "mpm-9k-train"
+data_case = "trj_loading-"  # "mpm-9k-train"
 data_tags = [i for i in range(0, 10)] \
             # + [i for i in range(180, 210)] \
             # + [i for i in range(360, 390)] \
@@ -22,7 +22,7 @@ data_tags = [i for i in range(0, 10)] \
             # + [i for i in range(720, 750)]
 # excluded_data_tags = [179]
 # data_tags = [i for i in data_tags if i not in excluded_data_tags]
-save_name = "iam_merged"
+save_name = "iam_loading_merged"
 
 # data containers
 trajectories = {}
@@ -49,7 +49,7 @@ for id in tqdm(data_tags, total=len(data_tags)):
             trajectory = list(data_dict.values())[0]
             trajectories[simulation_id] = trajectory
         except:
-            trajectory = data['gns_data'][0]
+            trajectory = data['gns_data']
             trajectories[f"simulation_trajectory_{id}"] = trajectory
     else:
         # for previous npz data
@@ -169,5 +169,5 @@ if dim == 3:
     }
 
 with open(f"metadata-{save_name}.json", "w") as fp:
-    json.dump(metadata, fp)
+    json.dump(metadata, fp, indent=4)
 print(f"metadata saved at: ./{save_name}.json")
