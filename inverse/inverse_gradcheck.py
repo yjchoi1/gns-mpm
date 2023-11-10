@@ -23,7 +23,7 @@ from convert_hd5_to_npz import convert_hd5_to_npz
 
 
 # Read config file
-with open('config.json', 'r') as file:
+with open('/work2/08264/baagee/frontera/gns-mpm-dev/inverse/config.json', 'r') as file:
     config = json.load(file)
 
 simulation_name = config["simulation_name"]
@@ -89,9 +89,6 @@ model_file = config["simulator"]["model_file"]
 output_dir = f"/outputs_{diff_method}_const_lim{loss_limit}_mag{penalty_mag}_lr{lr}_noised/"
 save_step = config["outputs"]["save_step"]
 
-# Save input config to the current output dir
-with open(f'{output_dir}/config.json', 'w') as file:
-    json.dump(config, file, indent=4)
 
 # ---------------------------------------------------------------------------------
 
@@ -120,6 +117,10 @@ optimizer = torch.optim.SGD(friction_model.parameters(), lr=lr)
 # Set output folder
 if not os.path.exists(f"{path}/{output_dir}"):
     os.makedirs(f"{path}/{output_dir}")
+
+# Save input config to the current output dir
+with open(f'{path}/{output_dir}/config.json', 'w') as file:
+    json.dump(config, file, indent=4)
 
 # Resume
 if resume:
