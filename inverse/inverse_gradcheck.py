@@ -1,5 +1,6 @@
 import torch
 import time
+import json
 import os
 import sys
 import numpy as np
@@ -21,48 +22,76 @@ from gns import train
 from convert_hd5_to_npz import convert_hd5_to_npz
 
 
-# inputs
-resume = False
-resume_epoch = 14
+# Read config file
+with open('config.json', 'r') as file:
+    config = json.load(file)
 
-diff_method = "fd"  # ad or fd
-x0_mode = "from_same_5vels"  # `from_mpm` or `from_same_5vels`
-nepoch = 21
-if diff_method == "fd":
-    dphi = 0.05  # just for fd
+simulation_name = config["simulation_name"]
+path = f"/work2/08264/baagee/frontera/gns-mpm-data/gns-data/inverse/sand2d_frictions3/{simulation_name}/"
+ground_truth_npz = config["ground_truth_npz"]
+
+# Iterations
+nepoch = config["nepoch"]
+resume = config["resume"]["enabled"]
+resume_epoch = config["resume"]["resume_epoch"]
+
+# Diff method (`from_mpm` or `from_same_5vels`)
+if config["diff_method"]["fd"] == True and config["diff_method"]["ad"] == False:
+    diff_method = "fd"  # ad or fd
+    dphi = config["diff_method"]["fd_config"]["dphi"]
+elif config["diff_method"]["ad"] == True and config["diff_method"]["fd"] == False:
+    diff_method = "ad"
+else:
+    raise ValueError("diff method should be either `fd` or `ad`")
 
 # inputs for MPM to make X0 (i.e., p0, p1, p2, p3, p4, p5)
-if x0_mode == "from_mpm":
-    uuid_name = "sand2d_inverse_eval"
-    mpm_input = "mpm_input.json"  # mpm input file to start running MPM for phi & phi+dphi
-    analysis_dt = 1e-06
-    output_steps = 2500
-    analysis_nsteps = 2500 * 5 + 1  # only run to get 6 initial positions to make X_0 in GNS
-    ndim = 2
+if config["x0_mode"]["from_same_5vels"] == True and config["x0_mode"]["from_mpm"] == False:
+    x0_mode = "from_same_5vels"
+elif config["x0_mode"]["from_mpm"] == True and config["x0_mode"]["from_same_5vels"] == False:
+    x0_mode = "from_mpm"
+    mpm_config = config["x0_mode"]["from_mpm"]["mpm_config"]
+    uuid_name = mpm_config["uuid_name"]
+    mpm_input = mpm_config["mpm_input"]  # mpm input file to start running MPM for phi & phi+dphi
+    analysis_dt = mpm_config["analysis_dt"]
+    output_steps = mpm_config["output_steps"]
+    analysis_nsteps = output_steps * 5 + 1  # only run to get 6 initial positions to make X_0 in GNS
+    ndim = mpm_config["ndim"]
+else:
+    raise ValueError("diff method should be either `from_same_5vels` or `from_mpm`")
 
-inverse_timestep = 379
-checkpoint_interval = 1
-lr = 500  # learning rate (phi=21: 1000, phi=42: 3000)
-simulation_name = "tall_phi42"
-path = f"/work2/08264/baagee/frontera/gns-mpm-data/gns-data/inverse/sand2d_frictions3/{simulation_name}/"
-ground_truth_npz = "sand2d_inverse_eval28.npz"
-phi = 30.0  # initial guess of phi
-loss_constraint = True
-if loss_constraint == True:
-    loss_limit = 0.0005
-    penalty_mag = 1
+# Optimizer
+inverse_timestep = config["inverse_timestep"]
+lr = config["lr"]  # learning rate (phi=21: 500, phi=42: 1000)
+phi = config["phi"]  # initial guess of phi, default=30.0
+if config["loss_constraint"]["enabled"] == True:
+    loss_constraint = True
+    loss_limit = 0.0005  # default=0.0005
+    penalty_mag = 4000  # default=4000
+else:
+    loss_constraint = False
+if config["noise_data"]["enabled"] == True:
+    noise_data = True
+    runout_mean = 0.5
+    runout_std = 0.01 * runout_mean
+else:
+    noise_data = False
 
-# inputs for forward simulator
+# Forward simulator
+checkpoint_interval = config["simulator"]["checkpoint_interval"]
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-noise_std = 6.7e-4  # hyperparameter used to train GNS.
+noise_std = config["simulator"]["noise_std"] # hyperparameter used to train GNS.
 NUM_PARTICLE_TYPES = 9
-model_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2d_frictions-sr020/"
-simulator_metadata_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2d_frictions-sr020/"
-model_file = "model-7020000.pt"
+model_path = config["simulator"]["model_path"]
+simulator_metadata_path = config["simulator"]["simulator_metadata_path"]
+model_file = config["simulator"]["model_file"]
 
 # outputs
-output_dir = f"/outputs_{diff_method}_const_lim{loss_limit}_mag{penalty_mag}_lr{lr}/"
-save_step = 1
+output_dir = f"/outputs_{diff_method}_const_lim{loss_limit}_mag{penalty_mag}_lr{lr}_noised/"
+save_step = config["outputs"]["save_step"]
+
+# Save input config to the current output dir
+with open(f'{output_dir}/config.json', 'w') as file:
+    json.dump(config, file, indent=4)
 
 # ---------------------------------------------------------------------------------
 
@@ -157,7 +186,12 @@ for epoch in range(start_epoch+1, nepoch):
             checkpoint_interval=checkpoint_interval,
         )
 
-        inversion_runout = predicted_positions[inverse_timestep, :, 0].max()
+        if noise_data == False:
+            inversion_runout = predicted_positions[inverse_timestep, :, 0].max()
+        elif noise_data == True:
+            inversion_runout = predicted_positions[inverse_timestep, :, 0].max() \
+                               + torch.randn(1).to(device) * runout_std
+
 
         loss = (inversion_runout - target_final_runout) ** 2
         if loss_constraint:
