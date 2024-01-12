@@ -23,7 +23,7 @@ from convert_hd5_to_npz import convert_hd5_to_npz
 
 
 # Read config file
-with open('/work2/08264/baagee/frontera/gns-mpm-dev/inverse/config.json', 'r') as file:
+with open('/work2/08264/baagee/frontera/gns-mpm-dev/inverse/config_short_phi21_ad.json', 'r') as file:
     config = json.load(file)
 
 simulation_name = config["simulation_name"]
@@ -65,16 +65,20 @@ lr = config["lr"]  # learning rate (phi=21: 500, phi=42: 1000)
 phi = config["phi"]  # initial guess of phi, default=30.0
 if config["loss_constraint"]["enabled"] == True:
     loss_constraint = True
-    loss_limit = 0.0005  # default=0.0005
-    penalty_mag = 4000  # default=4000
+    loss_limit = config["loss_constraint"]['loss_limit']  # default=0.0005
+    penalty_mag = config["loss_constraint"]['penalty_mag']  # default=4000
 else:
     loss_constraint = False
+    loss_limit = "none"  # default=0.0005
+    penalty_mag = "none"  # default=4000
 if config["noise_data"]["enabled"] == True:
     noise_data = True
     runout_mean = 0.5
     runout_std = 0.01 * runout_mean
 else:
     noise_data = False
+    runout_mean = "none"
+    runout_std = "none"
 
 # Forward simulator
 checkpoint_interval = config["simulator"]["checkpoint_interval"]
@@ -86,7 +90,10 @@ simulator_metadata_path = config["simulator"]["simulator_metadata_path"]
 model_file = config["simulator"]["model_file"]
 
 # outputs
-output_dir = f"/outputs_{diff_method}_const_lim{loss_limit}_mag{penalty_mag}_lr{lr}_noised/"
+if noise_data:
+    output_dir = f"/outputs_{diff_method}_const_lim{loss_limit}_mag{penalty_mag}_lr{lr}_noised/"
+else:
+    output_dir = f"/outputs_{diff_method}_const_lim{loss_limit}_mag{penalty_mag}_lr{lr}/"
 save_step = config["outputs"]["save_step"]
 
 
@@ -161,8 +168,12 @@ for epoch in range(start_epoch+1, nepoch):
     # First, obtain ground truth features except for material property
     if x0_mode == "from_mpm":
         dinit = data_loader.TrajectoriesDataset(path=f"{path}/{output_dir}/x0_epoch-{epoch}.npz")
-    if x0_mode == "from_same_5vels":
+    elif x0_mode == "from_same_5vels":
         dinit = data_loader.TrajectoriesDataset(path=f"{path}/{ground_truth_npz}")
+    else:
+        raise ValueError("x0_mode should be either `from_mpm` or `from_same_5vels`")
+
+    # Get initial features for GNS
     for example_i, features in enumerate(dinit):  # only one item exists in `dint`. No need `for` loop
         if len(features) < 3:
             raise NotImplementedError("Data should include material feature")
@@ -177,6 +188,7 @@ for epoch in range(start_epoch+1, nepoch):
             (len(initial_positions), 1), 1, device=device).to(torch.float32).contiguous()
 
         print("Start rollout...")
+        start_time_forward = time.time()
         predicted_positions = rollout_with_checkpointing(
             simulator=simulator,
             initial_positions=initial_positions,
@@ -186,6 +198,8 @@ for epoch in range(start_epoch+1, nepoch):
             nsteps=inverse_timestep - initial_positions.shape[1] + 1,  # exclude initial positions (x0) which we already have
             checkpoint_interval=checkpoint_interval,
         )
+        end_time_forward = time.time()
+        print(f"Forward rollout took {end_time_forward - start_time_forward}s")
 
         if noise_data == False:
             inversion_runout = predicted_positions[inverse_timestep, :, 0].max()
@@ -193,14 +207,16 @@ for epoch in range(start_epoch+1, nepoch):
             inversion_runout = predicted_positions[inverse_timestep, :, 0].max() \
                                + torch.randn(1).to(device) * runout_std
 
-
         loss = (inversion_runout - target_final_runout) ** 2
         if loss_constraint:
             penalty = compute_penalty(loss, threshold=loss_limit, alpha=penalty_mag)
             loss = loss + penalty
 
+        time_start_backprop = time.time()
         print("Backpropagate...")
         loss.backward()
+        time_end_backprop = time.time()
+        print(f"Backpropagate took {time_end_backprop - time_start_backprop}s")
 
     elif diff_method == "fd":  # finite diff
         # Prepare (phi, phi+dphi)
@@ -235,12 +251,20 @@ for epoch in range(start_epoch+1, nepoch):
             )
 
         # Compute gradient of loss: (loss(phi+dphi) - loss(phi))/dphi
-        inversion_runout = predicted_positions[inverse_timestep, :, 0].max()
-        inversion_runout_perturb = predicted_positions_perturb[inverse_timestep, :, 0].max()
+        if noise_data == False:
+            inversion_runout = predicted_positions[inverse_timestep, :, 0].max()
+            inversion_runout_perturb = predicted_positions_perturb[inverse_timestep, :, 0].max()
+        if noise_data == True:
+            inversion_runout = predicted_positions[inverse_timestep, :, 0].max() \
+                               + torch.randn(1).to(device) * runout_std
+            inversion_runout_perturb = predicted_positions_perturb[inverse_timestep, :, 0].max() \
+                                       + torch.randn(1).to(device) * runout_std
+
         loss = (inversion_runout - target_final_runout) ** 2
         loss_perturb = (inversion_runout_perturb - target_final_runout) ** 2
         gradient = (loss_perturb - loss) / dphi
         friction.grad = torch.tensor([gradient], dtype=friction.dtype, device=friction.device)
+
     else:
         raise NotImplementedError
 
@@ -278,12 +302,13 @@ for epoch in range(start_epoch+1, nepoch):
             'epoch': epoch,
             'time_spent': time_for_iteration,
             'position_state_dict': {
-                "target_positions": predicted_positions.clone().detach().cpu().numpy(),
-                "inversion_positions": target_positions.clone().detach().cpu().numpy()
+                "target_positions": target_positions.clone().detach().cpu().numpy(),
+                "inversion_positions": predicted_positions.clone().detach().cpu().numpy()
             },
             'friction_state_dict': To_Torch_Model_Param(friction).state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss,
+            'grad': friction.grad.item(),
             'loss_constraints': {"loss_limit": loss_limit, "penalty_mag": penalty_mag} if loss_constraint else None,
             'dphi': dphi if diff_method == "fd" else None
         }, f"{path}/{output_dir}/optimizer_state-{epoch}.pt")
