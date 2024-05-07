@@ -1,12 +1,12 @@
 from convert_hd5_to_npz import convert_hd5_to_npz
 
 # run
-material_feature = False
-ndim = 3
+material_feature = True
+ndim = 2
 dt = 1.0
-sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d/"
-sim_names = [f"sand3d_column_collapse{i}" for i in [8, 9, 10, 11, 12, 13, 14, 15, 16]]
-uuid = "/results/sand3d_column_collapse/"
+sim_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions_extrapolation/"
+sim_names = [f"extrapol{i}" for i in [0, 1]]
+uuid = "/results/extrapol/"
 
 # material_feature = FLAGS.material_feature
 # ndim = FLAGS.ndim
@@ -23,3 +23,4 @@ for i, sim in enumerate(sim_names):
                        material_feature=material_feature,
                        dt=dt
                        )
+print("Completed")

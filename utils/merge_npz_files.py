@@ -3,26 +3,26 @@ import json
 from tqdm import tqdm
 
 # Inputs
-bounds = [[-150, 150], [0.0, 200]]
-sequence_length = None
-default_connectivity_radius = 5.0
-dim = int(2)
-material_feature_len = int(0)
-dt_mpm = None  # 0.0025
-mpm_cell_size = "iam"  # [0.0125, 0.0125]
-nparticles_per_cell = "iam"  # int(16)
+bounds = [[0.1, 0.9], [0.1, 0.9], [0.1, 0.9]]
+sequence_length = 380
+default_connectivity_radius = 0.025
+dim = int(3)
+material_feature_len = int(1)
+dt_mpm = 0.0025  # 0.0025
+mpm_cell_size = 1/32  # [0.0125, 0.0125]
+nparticles_per_cell = 4  # int(16)
 dt_gns = 1.0  # 1.0 is default
 
-mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/iam/"  # "./mpm"
-data_case = "trj_loading-"  # "mpm-9k-train"
-data_tags = [i for i in range(0, 10)] \
+mpm_dir = "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d_frictions/"  # "./mpm"
+data_case = "trajectory"  # "mpm-9k-train"
+data_tags = [i for i in range(0, 900)] \
             # + [i for i in range(180, 210)] \
             # + [i for i in range(360, 390)] \
             # + [i for i in range(540, 570)] \
             # + [i for i in range(720, 750)]
 # excluded_data_tags = [179]
 # data_tags = [i for i in data_tags if i not in excluded_data_tags]
-save_name = "iam_loading_merged"
+save_name = "sand3dfriction-train"
 
 # data containers
 trajectories = {}
@@ -42,14 +42,14 @@ for id in tqdm(data_tags, total=len(data_tags)):
     data = np.load(npz_path, allow_pickle=True)
     # get trajectory info
     if 'gns_data' in data:
+        # for latest npz data
         try:
-            # for latest npz data
             data_dict = data['gns_data'].item()
             simulation_id = list(data_dict.keys())[0]
             trajectory = list(data_dict.values())[0]
             trajectories[simulation_id] = trajectory
         except:
-            trajectory = data['gns_data']
+            trajectory = data['gns_data'][0]
             trajectories[f"simulation_trajectory_{id}"] = trajectory
     else:
         # for previous npz data

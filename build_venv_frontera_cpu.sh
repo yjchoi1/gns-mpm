@@ -11,8 +11,9 @@ source venv-frontera-cpu/bin/activate
 
 which python
 python -m pip install --upgrade pip
-pip install torch==1.12.1+cpu torchvision==0.13.1+cpu torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cpu
-pip install pyg-lib torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.12.1+cpu.html
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+pip install torch_geometric
+pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.0.0+cpu.html
 python -m pip install -r requirements.txt
 
 

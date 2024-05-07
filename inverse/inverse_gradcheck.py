@@ -23,7 +23,7 @@ from convert_hd5_to_npz import convert_hd5_to_npz
 
 
 # Read config file
-with open('/work2/08264/baagee/frontera/gns-mpm-dev/inverse/config_short_phi21_ad.json', 'r') as file:
+with open('/work2/08264/baagee/frontera/gns-mpm-dev/inverse/config_short_phi21_fd.json', 'r') as file:
     config = json.load(file)
 
 simulation_name = config["simulation_name"]
@@ -181,6 +181,7 @@ for epoch in range(start_epoch+1, nepoch):
         particle_type = features[1].to(device)
         n_particles_per_example = torch.tensor([int(features[3])], dtype=torch.int32).to(device)
 
+    friction_before_update = friction.item()
     # Do forward pass as compute gradient of parameter
     if diff_method == "ad":
         # Make material property feature from current phi
@@ -305,6 +306,7 @@ for epoch in range(start_epoch+1, nepoch):
                 "target_positions": target_positions.clone().detach().cpu().numpy(),
                 "inversion_positions": predicted_positions.clone().detach().cpu().numpy()
             },
+            'friction_before_update': friction_before_update,
             'friction_state_dict': To_Torch_Model_Param(friction).state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss,

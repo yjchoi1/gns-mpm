@@ -1,0 +1,51 @@
+{
+    "simulation_name": "short_phi21",
+    "ground_truth_npz": "sand2d_inverse_eval25.npz",
+    "nepoch": 35,
+    "resume": {
+        "enabled": false,
+        "resume_epoch": 16
+    },
+    "diff_method": {
+        "fd": false,
+        "ad": true,
+        "fd_config": {
+            "dphi": 0.05
+        }
+    },
+    "x0_mode": {
+        "from_same_5vels": true,
+        "from_mpm": false,
+        "mpm_config": {
+            "uuid_name": "sand2d_inverse_eval",
+            "mpm_input": "mpm_input.json",
+            "analysis_dt": 1e-06,
+            "output_steps": 2500,
+            "analysis_nsteps": 12501,
+            "ndim": 2
+        }
+    },
+    "inverse_timestep": 379,
+    "lr": 500,
+    "phi": 30.0,
+    "loss_constraint": {
+        "enabled": true,
+        "loss_limit": 0.0005,
+        "penalty_mag": 4000
+    },
+    "noise_data": {
+        "enabled": false,
+        "runout_mean": 0.5,
+        "runout_std_factor": 0.01
+    },
+    "simulator": {
+        "checkpoint_interval": 1,
+        "noise_std": 0.00067,
+        "model_path": "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2d_frictions-sr020/",
+        "simulator_metadata_path": "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2d_frictions-sr020/",
+        "model_file": "model-7020000.pt"
+    },
+    "outputs": {
+        "save_step": 1
+    }
+}

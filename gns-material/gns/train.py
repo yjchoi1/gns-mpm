@@ -23,16 +23,16 @@ from gns import data_loader
 from gns import distribute
 
 flags.DEFINE_enum(
-    'mode', 'train', ['train', 'valid', 'rollout'],
+    'mode', 'rollout', ['train', 'valid', 'rollout'],
     help='Train model, validation or rollout evaluation.')
 flags.DEFINE_integer('batch_size', 2, help='The batch size.')
 flags.DEFINE_float('noise_std', 6.7e-4, help='The std deviation of the noise.')
-flags.DEFINE_string('data_path', None, help='The dataset directory.')
-flags.DEFINE_string('model_path', 'models/', help=('The path for saving checkpoints of the model.'))
-flags.DEFINE_string('output_path', 'rollouts/', help='The path for saving outputs (e.g. rollouts).')
-flags.DEFINE_string('model_file', None, help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('train_state_file', 'train_state.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
-flags.DEFINE_string('rollout_filename', None, help='Name saving the rollout')
+flags.DEFINE_string('data_path', "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/datasets/sand2d_frictions-sr020/", help='The dataset directory.')
+flags.DEFINE_string('model_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/models/sand2d_frictions-sr020/', help=('The path for saving checkpoints of the model.'))
+flags.DEFINE_string('output_path', '/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_frictions-sr020/', help='The path for saving outputs (e.g. rollouts).')
+flags.DEFINE_string('model_file', 'model-7020000.pt', help=('Model filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('train_state_file', 'train_state-7020000.pt', help=('Train state filename (.pt) to resume from. Can also use "latest" to default to newest file.'))
+flags.DEFINE_string('rollout_filename', 'rollout_eval29', help='Name saving the rollout')
 
 flags.DEFINE_integer('ntraining_steps', int(2E7), help='Number of training steps.')
 flags.DEFINE_integer('nsave_steps', int(5000), help='Number of steps at which to save the model.')

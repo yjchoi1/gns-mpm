@@ -18,9 +18,9 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     rollout_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_frictions-sr020/"
-    rollout_filename = "rollout_eval15_0_step6300000"
+    rollout_filename = "rollout_step7020000_extrapol-0_ex0"
     output_percentile = 99.9
-    output_filename = "step6300000_eval15"
+    output_filename = "step7020000_extrapol-0"
     mass = 1
     # rollout_path = args.rollout_path
     # rollout_filename = args.rollout_filename

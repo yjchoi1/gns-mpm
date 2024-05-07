@@ -3,9 +3,10 @@ set -e
 for i in 0
 do
 python3 animation_from_h5.py \
---path "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d/sand3d_column_collapse0/results/sand3d_column_collapse" \
---output "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand3d/sand3d_column_collapse0/" \
---ndim 3 --xboundary  -0.02083 1.02083 --yboundary -0.1458333 0.1458333 --zboundary -0.02083 1.02083
+--path "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions_extrapolation/extrapol0/results/extrapol/" \
+--output "/work2/08264/baagee/frontera/gns-mpm-data/mpm/sand2d_frictions_extrapolation/extrapol0/" \
+--ndim 2 --xboundary 0.0 1.0 --yboundary 0.0 0.5 \
+--step_stride 5
 done
 #python3 animation_from_h5.py \
 #--path "../mpm/3dsand_train${i}/3dsand_train${i}/results/3dsand_train${i}/" \

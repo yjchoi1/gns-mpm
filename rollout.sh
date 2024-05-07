@@ -3,12 +3,12 @@
 set -e
 
 # workdir
-export DATASET_NAME="sand3d_collision_r030"
+export DATASET_NAME="sand2d_frictions-sr020"
 #for ((STEPS=10000000; STEPS<14000000; STEPS+=1000000))
-for STEPS in 3000000
+for STEPS in 7020000
 do
 #export STEPS=15270000
-for i in {0..4..1}
+for i in 25 13 3 15
 do
 export OUTPUT_TAG="${i}"
 export TRAJECTORY_ID="0"
@@ -18,9 +18,9 @@ export WORK_DIR="../gns-mpm-data/gns-data"
 if test -f "${WORK_DIR}/datasets/${DATASET_NAME}/test.npz"
  then rm ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
 fi
-cp ${WORK_DIR}/datasets/${DATASET_NAME}/trajectory${OUTPUT_TAG}.npz ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
+cp ${WORK_DIR}/datasets/${DATASET_NAME}/sand2d_inverse_eval${OUTPUT_TAG}.npz ${WORK_DIR}/datasets/${DATASET_NAME}/test.npz
 
-cd gns-parallel
+cd gns-material
 # Generate test rollouts.
 export WORK_DIR="../../gns-mpm-data/gns-data"
 python3 -m gns.train \
@@ -30,15 +30,15 @@ python3 -m gns.train \
 --model_file="model-${STEPS}.pt" \
 --train_state_file="train_state-${STEPS}.pt" \
 --output_path="${WORK_DIR}/rollouts/${DATASET_NAME}" \
---rollout_filename="rollout_${OUTPUT_TAG}_${TRAJECTORY_ID}_step${STEPS}"
+--rollout_filename="rollout_${OUTPUT_TAG}_step${STEPS}"
 cd ..
-# Render rollout
-export WORK_DIR="../gns-mpm-data/gns-data"
-python3 utils/render_rollout.py \
---output_mode="gif" \
---step_stride=5 \
---rollout_dir="${WORK_DIR}/rollouts/${DATASET_NAME}/" \
---rollout_name="rollout_${OUTPUT_TAG}_${TRAJECTORY_ID}_step${STEPS}"
+## Render rollout
+#export WORK_DIR="../gns-mpm-data/gns-data"
+#python3 utils/render_rollout.py \
+#--output_mode="gif" \
+#--step_stride=5 \
+#--rollout_dir="${WORK_DIR}/rollouts/${DATASET_NAME}/" \
+#--rollout_name="rollout_${OUTPUT_TAG}_step${STEPS}_ex${TRAJECTORY_ID}"
 
 ## Make plots for normalized runout and energy evolution
 #export WORK_DIR="../gns-mpm-data/gns-data"

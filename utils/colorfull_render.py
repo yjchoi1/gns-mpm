@@ -13,36 +13,37 @@ from preprocess_rollout_data import get_positions, compute_kinemacis
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 
-rollout_tags = \
-    [
+# rollout_tags = \
+#     [
     # [("test2-1", "a=0.5", "solid", "0.9"),  # (simulation id, aspect ratio, linetype, linecolor)
     #  ("test4", "a=0.8", (0, (5, 1)), "0.7"),
     #  ("test0-2", "a=1.0", (0, (5, 5)), "0.5"),
     #  ("test5-1", "a=2.0", (0, (1, 1)), "0.3")]
     #  ("test5-5", "a=3.0", "dashdot", "0.15"),
     #  ("test6-1", "a=4.0", (0, (3, 5, 1, 5)), "0.0"),
-     ("eval12", "a=0.5", "dotted", "0.7")]
+    #  ("eval12", "a=0.5", "dotted", "0.7")] rollout_step7020000_sand2d_inverse_eval-1_ex0
+rollout_tags = [("extrapol-0", 0), ("extrapol-1", 0)]
 
 gen_animation = False
 gen_plots = True
 if gen_plots == True:
     normalized_time_to_plot = [0, 1.0, 2.5]  # normalized times at which plots are generated
-data_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_frictions-r015/"
-save_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_frictions-r015/"
-training_steps = 5000000
+data_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_frictions-sr020/"
+save_path = "/work2/08264/baagee/frontera/gns-mpm-data/gns-data/rollouts/sand2d_frictions-sr020/"
+training_steps = 7020000
 trajectory_ID = [0]
 mpm_dt = 0.0025
 gravity = 9.81
 xboundary = [0.0, 1.0]
 yboundary = [0.0, 0.5]
-timestep_stride = 3
+timestep_stride = 5
 
-
+# rollout_step7020000_extrapol-1_ex0
 rollout_filenames = []
 for tag in rollout_tags:
     for i in trajectory_ID:
         if training_steps is not None:
-            rollout_filename = f"rollout_{tag[0]}_{i}_step{training_steps}"
+            rollout_filename = f"rollout_step{training_steps}_{tag[0]}_ex0"
         else:
             rollout_filename = f"rollout_{tag[0]}_{i}"
         rollout_filenames.append(rollout_filename)
@@ -67,7 +68,7 @@ if gen_plots is True:
 
         for i in timesteps_to_plot:
 
-            fig = plt.figure(figsize=(5, 2.0))
+            fig = plt.figure(figsize=(6.0, 2.0))
             grid = ImageGrid(fig, 111,
                              nrows_ncols=(1, 2),
                              axes_pad=0.3,
@@ -80,8 +81,10 @@ if gen_plots is True:
             for j, (datacase, kinematics) in enumerate(kin_data.items()):
                 # sample color values
                 cmap = plt.cm.viridis
-                vmax = np.ndarray.flatten(kinematics["displacement"]).max()
-                vmin = np.ndarray.flatten(kinematics["displacement"]).min()
+                # vmax = np.ndarray.flatten(kinematics["displacement"]).max()
+                # vmin = np.ndarray.flatten(kinematics["displacement"]).min()
+                vmax = 0.7
+                vmin = 0.0
                 sampled_value = kinematics["displacement"][i]
 
                 # select ax to plot at set boundary

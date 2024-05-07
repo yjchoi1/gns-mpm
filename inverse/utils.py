@@ -3,20 +3,30 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import animation
 
+import torch
 
-def compute_penalty(original_loss, threshold, alpha):
+
+def compute_penalty(original_loss, threshold, alpha, penalty_type='l2'):
     """
-    Computes a penalty term to ensure that loss does not go below the threshold.
+    Computes a penalty term based on the selected penalty type to ensure that loss does not go below the threshold.
 
     Args:
     - original_loss: Tensor, the computed loss.
     - threshold: float, the lower bound for the loss.
     - alpha: float, a hyperparameter to control the magnitude of the penalty.
+    - penalty_type: str, either "l1" or "l2" to determine the type of penalty.
 
     Returns:
     - penalty: Tensor, the computed penalty term.
     """
-    penalty = torch.relu(threshold - original_loss) * alpha
+
+    if penalty_type == 'l1':
+        penalty = torch.relu(threshold - original_loss) * alpha
+    elif penalty_type == 'l2':
+        penalty = torch.pow(torch.relu(threshold - original_loss), 2) * alpha
+    else:
+        raise ValueError("penalty_type must be either 'l1' or 'l2'")
+
     return penalty
 
 
@@ -41,17 +51,18 @@ def make_animation(
     print(f"Animation saved to: {output}")
 
 
-class Make_it_to_torch_model(torch.nn.Module):
+class To_Torch_Model_Param(torch.nn.Module):
     def __init__(self, parameters):
-        super(Make_it_to_torch_model, self).__init__()
+        super(To_Torch_Model_Param, self).__init__()
         self.current_params = torch.nn.Parameter(parameters)
 
 def visualize_final_deposits(
-        friction,
         predicted_positions: torch.tensor,
         target_positions: torch.tensor,
         metadata: dict,
-        write_path: str):
+        write_path: str,
+        friction=None,
+):
 
     fig, ax = plt.subplots()
     inversion_positions_plot = predicted_positions.clone().detach().cpu().numpy()
@@ -69,3 +80,28 @@ def visualize_final_deposits(
     ax.legend()
     ax.grid(True)
     plt.savefig(write_path)
+
+
+def visualize_velocity_profile(
+        predicted_velocities: torch.tensor,
+        target_velocities: np.array,
+        write_path
+):
+    fig, axes = plt.subplots(1, 2)
+    n_vels = len(predicted_velocities)
+    predicted_velocities = predicted_velocities.clone().detach().cpu().numpy()
+    target_velocities = target_velocities
+
+    # plot x vels
+    axes[0].plot(range(n_vels), predicted_velocities[:, 0])
+    axes[0].plot(range(n_vels), target_velocities[:, 0])
+    axes[0].set_xlabel("Particle group id")
+    axes[0].set_ylabel("x-velocity (m/s)")
+    # plot y vels
+    axes[1].plot(range(n_vels), predicted_velocities[:, 1])
+    axes[1].plot(range(n_vels), target_velocities[:, 1])
+    axes[0].set_xlabel("Particle group id")
+    axes[0].set_ylabel("y-velocity (m/s)")
+    plt.tight_layout()
+    plt.savefig(write_path)
+
